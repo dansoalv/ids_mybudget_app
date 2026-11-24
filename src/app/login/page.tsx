@@ -5,8 +5,13 @@ import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "Acceso" };
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
-  const { next } = await searchParams;
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; reset?: string; error?: string }> }) {
+  const { next, reset, error } = await searchParams;
+  const notice = reset === "success"
+    ? "Tu contraseña se actualizó. Ya puedes iniciar sesión."
+    : error === "confirmation"
+      ? "El enlace ya no es válido o expiró. Solicita uno nuevo."
+      : undefined;
   return (
     <main className="safe-screen grid min-h-dvh bg-surface lg:grid-cols-[1fr_1.05fr]">
       <section className="flex items-center justify-center px-5 py-10 sm:px-10">
@@ -18,7 +23,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <h1 className="mt-10 text-3xl font-extrabold tracking-tight">Tus finanzas, más claras.</h1>
           <p className="mt-3 text-slate-500">Registra, comparte y liquida gastos sin hojas de cálculo ni cuentas confusas.</p>
           <div className="mt-8 rounded-[2rem] bg-white p-6 shadow-xl shadow-brand/8 sm:p-8">
-            <LoginForm next={next} />
+            <LoginForm next={next} notice={notice} />
           </div>
         </div>
       </section>

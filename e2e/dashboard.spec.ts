@@ -37,6 +37,16 @@ test("muestra la información básica del perfil", async ({ page }) => {
   }
 });
 
+test("permite iniciar el flujo de recuperación de contraseña", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByRole("link", { name: "¿Olvidaste tu contraseña?" }).click();
+
+  await expect(page.getByRole("heading", { name: "Recupera tu acceso" })).toBeVisible();
+  await page.getByLabel("Correo de tu cuenta").fill("persona@ejemplo.com");
+  await page.getByRole("button", { name: "Enviar enlace de recuperación" }).click();
+  await expect(page.getByText(/Si existe una cuenta con ese correo/)).toBeVisible();
+});
+
 test("consulta los módulos informativos de movimientos y plan", async ({ page }) => {
   await page.goto("/transactions");
   await expect(page.getByRole("heading", { name: "Todo tu mes, en orden" })).toBeVisible();

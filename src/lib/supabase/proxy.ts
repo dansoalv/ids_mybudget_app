@@ -34,6 +34,7 @@ export async function updateSession(request: NextRequest) {
   const isAuthRoute = pathname.startsWith("/login") || pathname.startsWith("/auth");
   const isPublicRoute =
     isAuthRoute ||
+    pathname.startsWith("/forgot-password") ||
     pathname.startsWith("/offline") ||
     pathname.startsWith("/api/") ||
     pathname === "/manifest.webmanifest";

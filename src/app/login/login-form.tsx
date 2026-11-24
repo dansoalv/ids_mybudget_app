@@ -1,13 +1,14 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import Link from "next/link";
 import { LoaderCircle } from "lucide-react";
 
 import { signIn, signUp, type AuthActionState } from "./actions";
 
 const initialState: AuthActionState = {};
 
-export function LoginForm({ next = "/" }: { next?: string }) {
+export function LoginForm({ next = "/", notice }: { next?: string; notice?: string }) {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [signInState, signInAction, signInPending] = useActionState(signIn, initialState);
   const [signUpState, signUpAction, signUpPending] = useActionState(signUp, initialState);
@@ -27,11 +28,20 @@ export function LoginForm({ next = "/" }: { next?: string }) {
 
       <form action={mode === "signin" ? signInAction : signUpAction} className="mt-6 space-y-4">
         <input type="hidden" name="next" value={next} />
+        {notice ? <p className="rounded-2xl bg-aqua/20 px-4 py-3 text-sm font-semibold text-brand" role="status">{notice}</p> : null}
         {mode === "signup" ? (
           <Field label="Nombre" name="displayName" type="text" autoComplete="name" placeholder="Tu nombre" />
         ) : null}
         <Field label="Correo" name="email" type="email" autoComplete="email" placeholder="tu@correo.com" />
         <Field label="Contraseña" name="password" type="password" autoComplete={mode === "signin" ? "current-password" : "new-password"} placeholder="Mínimo 8 caracteres" />
+
+        {mode === "signin" ? (
+          <div className="flex justify-end">
+            <Link href="/forgot-password" className="text-sm font-bold text-brand underline-offset-4 hover:underline">
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
+        ) : null}
 
         {state.error ? <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700" role="alert">{state.error}</p> : null}
         {state.message ? <p className="rounded-2xl bg-aqua/20 px-4 py-3 text-sm font-semibold text-brand" role="status">{state.message}</p> : null}
