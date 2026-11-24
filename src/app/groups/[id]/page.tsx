@@ -37,7 +37,7 @@ export default async function GroupDetailPage({
   const invitationUrl = query.invite ? `${appUrl}/invite/${query.invite}` : null;
 
   return (
-    <div className="min-h-screen bg-surface text-ink">
+    <div className="min-h-dvh bg-surface pb-[env(safe-area-inset-bottom)] text-ink">
       <AppHeader title={group.name} backHref="/groups" />
       <main className="mx-auto max-w-6xl px-5 py-8 sm:px-8">
         {(query.error || query.success) ? (

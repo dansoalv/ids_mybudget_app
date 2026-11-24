@@ -18,7 +18,7 @@ export default async function GroupsPage({ searchParams }: { searchParams: Promi
       ];
 
   return (
-    <div className="min-h-screen bg-surface text-ink">
+    <div className="min-h-dvh bg-surface pb-[env(safe-area-inset-bottom)] text-ink">
       <AppHeader title="Grupos" />
       <main className="mx-auto grid max-w-6xl gap-6 px-5 py-8 sm:px-8 lg:grid-cols-[1fr_380px]">
         <section>

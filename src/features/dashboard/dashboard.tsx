@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FocusEvent } from "react";
 import Link from "next/link";
 import {
   ArrowDownLeft,
@@ -110,7 +110,7 @@ export function Dashboard({ initialTransactions, initialSharedBalances, user, da
   }
 
   return (
-    <div className="min-h-screen bg-surface text-ink">
+    <div className="min-h-dvh bg-surface text-ink">
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 flex-col bg-ink px-6 py-8 text-white lg:flex">
         <div className="flex items-center gap-3 px-2">
           <div className="grid size-11 place-items-center rounded-2xl bg-accent text-cream shadow-lg shadow-black/20">
@@ -169,8 +169,8 @@ export function Dashboard({ initialTransactions, initialSharedBalances, user, da
         </div>
       </aside>
 
-      <main className="pb-28 lg:ml-72 lg:pb-12">
-        <div className="mx-auto max-w-7xl px-4 py-5 sm:px-8 lg:px-10 lg:py-9">
+      <main className="safe-dashboard-main lg:ml-72">
+        <div className="safe-dashboard-content mx-auto max-w-7xl px-4 pb-5 sm:px-8 lg:px-10 lg:pb-9">
           <header className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-semibold text-slate-500">{new Intl.DateTimeFormat("es-MX", { weekday: "long", day: "numeric", month: "long" }).format(new Date())}</p>
@@ -317,13 +317,13 @@ export function Dashboard({ initialTransactions, initialSharedBalances, user, da
       <button
         type="button"
         onClick={() => setIsFormOpen(true)}
-        className="fixed bottom-24 right-5 z-30 grid size-14 place-items-center rounded-2xl bg-accent text-white shadow-xl shadow-accent/30 sm:hidden"
+        className="safe-fab fixed right-5 z-30 grid size-14 place-items-center rounded-2xl bg-accent text-white shadow-xl shadow-accent/30 sm:hidden"
         aria-label="Agregar movimiento"
       >
         <Plus className="size-6" aria-hidden="true" />
       </button>
 
-      <nav className="fixed inset-x-3 bottom-3 z-20 flex items-center justify-around rounded-[1.4rem] border border-slate-200/70 bg-white/95 px-2 py-2 shadow-xl shadow-slate-900/10 backdrop-blur lg:hidden" aria-label="Navegación móvil">
+      <nav className="safe-bottom-nav fixed inset-x-0 bottom-0 z-20 flex items-center justify-around rounded-t-[1.4rem] border border-slate-200/70 bg-white/95 px-2 pt-2 shadow-xl shadow-slate-900/10 backdrop-blur sm:inset-x-3 sm:rounded-[1.4rem] sm:pb-2 lg:hidden" aria-label="Navegación móvil">
         {navigation.map((item) => {
           const Icon = item.icon;
           return (
@@ -339,7 +339,7 @@ export function Dashboard({ initialTransactions, initialSharedBalances, user, da
         <QuickTransactionForm onClose={() => setIsFormOpen(false)} onCreate={addTransaction} allowShared={dataMode === "demo"} />
       ) : null}
 
-      <div className="pointer-events-none fixed inset-x-4 top-4 z-50 flex justify-center" aria-live="polite">
+      <div className="safe-notice pointer-events-none fixed inset-x-4 z-50 flex justify-center" aria-live="polite">
         {notice ? (
           <div className="rounded-2xl bg-brand px-5 py-3 text-sm font-bold text-white shadow-xl">{notice}</div>
         ) : null}
@@ -427,6 +427,23 @@ function QuickTransactionForm({
   const [scope, setScope] = useState<TransactionScope>("personal");
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+
+  function keepFieldVisible(event: FocusEvent<HTMLFormElement>) {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement || target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement)) return;
+
+    window.setTimeout(() => {
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 250);
+  }
+
   function handleSubmit(formData: FormData) {
     const result = createTransactionSchema.safeParse({
       title: formData.get("title"),
@@ -455,8 +472,8 @@ function QuickTransactionForm({
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center bg-ink/65 p-0 backdrop-blur-sm sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-labelledby="transaction-title" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <div className="max-h-[92vh] w-full overflow-y-auto rounded-t-[2rem] bg-white p-5 shadow-2xl sm:max-w-lg sm:rounded-[2rem] sm:p-7">
+    <div className="visual-viewport-overlay fixed inset-x-0 z-40 flex items-end justify-center overflow-hidden bg-ink/65 p-0 backdrop-blur-sm sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-labelledby="transaction-title" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+      <div className="safe-dialog-panel w-full overflow-y-auto rounded-t-[2rem] bg-white p-5 shadow-2xl sm:max-h-[calc(100dvh-3rem)] sm:max-w-lg sm:rounded-[2rem] sm:p-7">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-teal">Registro rápido</p>
@@ -467,7 +484,7 @@ function QuickTransactionForm({
           </button>
         </div>
 
-        <form action={handleSubmit} className="mt-6">
+        <form action={handleSubmit} onFocusCapture={keepFieldVisible} className="mt-6">
           <div className="grid grid-cols-2 rounded-2xl bg-slate-100 p-1">
             {(["expense", "income"] as const).map((option) => (
               <button key={option} type="button" onClick={() => setType(option)} className={cn("min-h-11 rounded-xl text-sm font-extrabold transition", type === option ? "bg-white text-slate-950 shadow-sm" : "text-slate-500")}>

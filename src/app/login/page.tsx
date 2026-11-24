@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Acceso" };
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const { next } = await searchParams;
   return (
-    <main className="grid min-h-screen bg-surface lg:grid-cols-[1fr_1.05fr]">
+    <main className="safe-screen grid min-h-dvh bg-surface lg:grid-cols-[1fr_1.05fr]">
       <section className="flex items-center justify-center px-5 py-10 sm:px-10">
         <div className="w-full max-w-md">
           <div className="flex items-center gap-3">

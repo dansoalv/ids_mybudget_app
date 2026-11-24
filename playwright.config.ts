@@ -14,6 +14,10 @@ export default defineConfig({
   projects: [
     { name: "chromium-desktop", use: { ...devices["Desktop Chrome"] } },
     { name: "chromium-mobile", use: { ...devices["Pixel 7"] } },
+    {
+      name: "chromium-iphone-pro-max",
+      use: { ...devices["iPhone 17 Pro Max"], browserName: "chromium" },
+    },
   ],
   webServer: {
     command: "npm run start:e2e",

@@ -9,7 +9,7 @@ export default async function InvitationPage({ params }: { params: Promise<{ tok
   await requireUser();
 
   return (
-    <div className="min-h-screen bg-surface">
+    <div className="min-h-dvh bg-surface pb-[env(safe-area-inset-bottom)]">
       <AppHeader title="Invitación" />
       <main className="grid place-items-center px-5 py-16">
         <section className="w-full max-w-md rounded-[2rem] bg-white p-8 text-center shadow-xl shadow-brand/8">
