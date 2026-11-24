@@ -1,7 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import { Home, ReceiptText, Users, WalletCards } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+
+import { LinkPendingIndicator } from "./link-pending-indicator";
 
 const items = [
   { id: "home", label: "Inicio", href: "/", icon: Home },
@@ -25,12 +29,13 @@ export function MobileNavigation({ active }: { active: (typeof items)[number]["i
             href={item.href}
             aria-current={isActive ? "page" : undefined}
             className={cn(
-              "flex min-w-16 flex-col items-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-bold",
+              "relative flex min-w-16 flex-col items-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-bold",
               isActive ? "text-brand" : "text-slate-400",
             )}
           >
             <Icon className="size-5" strokeWidth={isActive ? 2.5 : 2} aria-hidden="true" />
             {item.label}
+            <LinkPendingIndicator />
           </Link>
         );
       })}

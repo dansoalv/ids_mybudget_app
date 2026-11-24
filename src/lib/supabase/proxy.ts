@@ -27,9 +27,8 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data } = await supabase.auth.getClaims();
+  const isAuthenticated = Boolean(data?.claims?.sub);
 
   const pathname = request.nextUrl.pathname;
   const isAuthRoute = pathname.startsWith("/login") || pathname.startsWith("/auth");
@@ -39,14 +38,14 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/api/") ||
     pathname === "/manifest.webmanifest";
 
-  if (!user && !isPublicRoute) {
+  if (!isAuthenticated && !isPublicRoute) {
     const urlToLogin = request.nextUrl.clone();
     urlToLogin.pathname = "/login";
     urlToLogin.searchParams.set("next", pathname);
     return NextResponse.redirect(urlToLogin);
   }
 
-  if (user && pathname === "/login") {
+  if (isAuthenticated && pathname === "/login") {
     const destination = request.nextUrl.clone();
     destination.pathname = "/";
     destination.search = "";

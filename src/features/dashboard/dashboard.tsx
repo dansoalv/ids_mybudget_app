@@ -25,6 +25,7 @@ import { queueTransaction } from "@/lib/offline/queue";
 import { cn } from "@/lib/utils";
 import { createTransactionSchema } from "@/features/transactions/schemas";
 import { signOut } from "@/app/login/actions";
+import { LinkPendingIndicator } from "@/components/link-pending-indicator";
 import type {
   Transaction,
   TransactionCategory,
@@ -130,7 +131,7 @@ export function Dashboard({ initialTransactions, initialSharedBalances, user, da
                 key={item.label}
                 href={item.href}
                 className={cn(
-                  "flex w-full items-center gap-3 rounded-2xl px-4 py-3.5 text-left text-[15px] font-semibold transition",
+                  "relative flex w-full items-center gap-3 rounded-2xl px-4 py-3.5 text-left text-[15px] font-semibold transition",
                   item.active
                     ? "bg-cream text-brand shadow-sm"
                     : "text-white/65 hover:bg-white/8 hover:text-white",
@@ -138,6 +139,7 @@ export function Dashboard({ initialTransactions, initialSharedBalances, user, da
               >
                 <Icon className="size-5" strokeWidth={2.2} aria-hidden="true" />
                 {item.label}
+                <LinkPendingIndicator />
               </Link>
             );
           })}
@@ -260,7 +262,7 @@ export function Dashboard({ initialTransactions, initialSharedBalances, user, da
                   </button>
                 </div>
                 <div className="mt-6 flex items-center gap-6">
-                  <div className="relative size-28 shrink-0 rounded-full bg-[conic-gradient(#0F3D3E_0_54%,#2E6F73_54%_78%,#C6601F_78%_91%,#7FB3B8_91%_100%)]">
+                  <div className="relative size-28 shrink-0 rounded-full bg-[conic-gradient(#2563EB_0_54%,#0F766E_54%_78%,#7C3AED_78%_91%,#A7F3D0_91%_100%)]">
                     <div className="absolute inset-4 grid place-items-center rounded-full bg-white text-center">
                       <div>
                         <p className="text-xs font-semibold text-slate-400">Total</p>
@@ -327,9 +329,10 @@ export function Dashboard({ initialTransactions, initialSharedBalances, user, da
         {navigation.map((item) => {
           const Icon = item.icon;
           return (
-            <Link key={item.label} href={item.href} className={cn("flex min-w-16 flex-col items-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-bold", item.active ? "text-brand" : "text-slate-400")}>
+            <Link key={item.label} href={item.href} className={cn("relative flex min-w-16 flex-col items-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-bold", item.active ? "text-brand" : "text-slate-400")}>
               <Icon className="size-5" strokeWidth={item.active ? 2.5 : 2} aria-hidden="true" />
               {item.label === "Presupuesto" ? "Plan" : item.label}
+              <LinkPendingIndicator />
             </Link>
           );
         })}
@@ -510,7 +513,7 @@ function QuickTransactionForm({
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <label className="block">
               <span className="text-sm font-bold text-slate-700">Categoría</span>
-              <select name="category" defaultValue={type === "income" ? "salary" : "food"} className="mt-2 min-h-13 w-full appearance-none rounded-2xl border border-slate-200 bg-[linear-gradient(45deg,transparent_50%,#2E6F73_50%),linear-gradient(135deg,#2E6F73_50%,transparent_50%)] bg-[position:calc(100%-20px)_22px,calc(100%-15px)_22px] bg-[size:5px_5px,5px_5px] bg-no-repeat px-4 text-sm font-semibold outline-none focus:border-teal focus:ring-4 focus:ring-aqua/20">
+              <select name="category" defaultValue={type === "income" ? "salary" : "food"} className="mt-2 min-h-13 w-full appearance-none rounded-2xl border border-slate-200 bg-[linear-gradient(45deg,transparent_50%,#0F766E_50%),linear-gradient(135deg,#0F766E_50%,transparent_50%)] bg-[position:calc(100%-20px)_22px,calc(100%-15px)_22px] bg-[size:5px_5px,5px_5px] bg-no-repeat px-4 text-sm font-semibold outline-none focus:border-teal focus:ring-4 focus:ring-aqua/20">
                 {Object.entries(categoryMeta).map(([value, meta]) => <option key={value} value={value}>{meta.label}</option>)}
               </select>
             </label>

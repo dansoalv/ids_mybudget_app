@@ -5,12 +5,10 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { data: claimsData, error: authError } = await supabase.auth.getClaims();
+  const userId = claimsData?.claims?.sub;
 
-  if (authError || !user) {
+  if (authError || !userId) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
@@ -27,8 +25,8 @@ export async function POST(request: Request) {
     .from("transactions")
     .insert({
       id: transaction.id,
-      owner_id: user.id,
-      created_by: user.id,
+      owner_id: userId,
+      created_by: userId,
       kind: transaction.type,
       title: transaction.title,
       category: transaction.category,

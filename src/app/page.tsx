@@ -1,7 +1,7 @@
 import { Dashboard } from "@/features/dashboard/dashboard";
 import { initialTransactions, sharedBalances } from "@/features/dashboard/demo-data";
+import { requireUser } from "@/lib/auth";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { createClient } from "@/lib/supabase/server";
 import { toTransaction } from "@/lib/transactions";
 import type { SharedBalance } from "@/types/finance";
 
@@ -19,12 +19,7 @@ export default async function HomePage() {
     );
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return null;
+  const { supabase, user } = await requireUser();
 
   const [profileResult, transactionResult, groupResult, balanceResult] = await Promise.all([
     supabase.from("profiles").select("display_name").eq("id", user.id).single(),
