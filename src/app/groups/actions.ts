@@ -1,6 +1,6 @@
 "use server";
 
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
@@ -20,14 +20,22 @@ export async function createGroup(formData: FormData) {
   if (!parsed.success) fail("/groups", "Revisa el nombre y el tipo de grupo");
 
   const { supabase, user } = await requireUser();
-  const { data, error } = await supabase
+  const groupId = randomUUID();
+  const { error } = await supabase
     .from("groups")
-    .insert({ owner_id: user.id, name: parsed.data.name, kind: parsed.data.kind, currency: "MXN" })
-    .select("id")
-    .single();
+    .insert({ id: groupId, owner_id: user.id, name: parsed.data.name, kind: parsed.data.kind, currency: "MXN" });
 
-  if (error || !data) fail("/groups", "No pudimos crear el grupo");
-  redirect(`/groups/${data.id}`);
+  if (error) {
+    console.error("Group creation failed", {
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+      message: error.message,
+    });
+    fail("/groups", "No pudimos crear el grupo. Intenta nuevamente.");
+  }
+
+  redirect(`/groups/${groupId}`);
 }
 
 export async function createInvitation(formData: FormData) {
