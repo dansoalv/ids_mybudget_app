@@ -42,22 +42,22 @@ export default async function GroupDetailPage({
       <AppHeader title={group.name} backHref="/groups" />
       <main className="mx-auto max-w-6xl px-5 py-8 sm:px-8">
         {(query.error || query.success) ? (
-          <div className={`mb-6 rounded-2xl px-5 py-4 text-sm font-bold ${query.error ? "bg-red-50 text-red-700" : "bg-aqua/25 text-brand"}`}>
+          <div className={`mb-6 rounded-2xl px-5 py-4 text-sm font-bold ${query.error ? "bg-accent/15 text-ink" : "bg-aqua/35 text-ink"}`}>
             {query.error ?? successMessage(query.success)}
           </div>
         ) : null}
 
         <section className="grid gap-5 md:grid-cols-3">
-          <article className="rounded-[2rem] bg-brand p-6 text-white md:col-span-2">
-            <p className="text-sm font-bold text-white/55">Balance del grupo</p>
+          <article className="rounded-[2rem] bg-gold p-6 text-ink md:col-span-2">
+            <p className="text-sm font-bold text-ink/55">Balance del grupo</p>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               {(balancesResult.data ?? []).map((balance) => {
                 const amount = balance.balance_cents ?? 0;
                 return (
                   <div key={balance.user_id} className="rounded-2xl bg-white/8 p-4">
                     <p className="text-sm font-bold">{names.get(balance.user_id ?? "") ?? "Integrante"}</p>
-                    <p className={`mt-1 text-xl font-extrabold ${amount >= 0 ? "text-aqua" : "text-cream"}`}>{amount >= 0 ? "+" : "−"}{formatMoney(Math.abs(amount))}</p>
-                    <p className="mt-1 text-xs text-white/45">{amount > 0 ? "Debe recibir" : amount < 0 ? "Debe pagar" : "Al corriente"}</p>
+                    <p className="mt-1 text-xl font-extrabold text-ink">{amount >= 0 ? "+" : "−"}{formatMoney(Math.abs(amount))}</p>
+                    <p className="mt-1 text-xs text-ink/50">{amount > 0 ? "Debe recibir" : amount < 0 ? "Debe pagar" : "Al corriente"}</p>
                   </div>
                 );
               })}
@@ -67,7 +67,7 @@ export default async function GroupDetailPage({
             <span className="grid size-11 place-items-center rounded-2xl bg-cream text-accent"><Users className="size-5" /></span>
             <h2 className="mt-4 font-extrabold">{members.length} integrantes</h2>
             <div className="mt-4 space-y-3">
-              {members.map((member) => <div key={member.user_id} className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-full bg-aqua/30 text-xs font-extrabold text-brand">{(names.get(member.user_id) ?? "U").slice(0, 1)}</span><div><p className="text-sm font-bold">{names.get(member.user_id) ?? "Usuario"}</p><p className="text-xs capitalize text-slate-400">{member.role}</p></div></div>)}
+              {members.map((member) => <div key={member.user_id} className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-full bg-aqua/30 text-xs font-extrabold text-ink">{(names.get(member.user_id) ?? "U").slice(0, 1)}</span><div><p className="text-sm font-bold">{names.get(member.user_id) ?? "Usuario"}</p><p className="text-xs capitalize text-slate-400">{member.role}</p></div></div>)}
             </div>
           </article>
         </section>
@@ -80,7 +80,7 @@ export default async function GroupDetailPage({
               <Field label="Cantidad" name="amount" type="number" placeholder="0.00" />
               <label className="block"><span className="text-sm font-bold">Categoría</span><select name="category" className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4"><option value="food">Alimentos</option><option value="home">Hogar</option><option value="transport">Transporte</option><option value="entertainment">Ocio</option><option value="other">Otros</option></select></label>
               <label className="block"><span className="text-sm font-bold">Pagó</span><select name="paidBy" defaultValue={user.id} className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4">{members.map((member) => <option key={member.user_id} value={member.user_id}>{names.get(member.user_id)}</option>)}</select></label>
-              <button className="min-h-12 rounded-2xl bg-accent px-5 font-extrabold text-white sm:col-span-2">Guardar gasto</button>
+              <button className="min-h-12 rounded-2xl bg-accent px-5 font-extrabold text-ink sm:col-span-2">Guardar gasto</button>
             </form>
           </ActionCard>
 
@@ -91,7 +91,7 @@ export default async function GroupDetailPage({
               <MemberSelect label="Recibió" name="payeeId" members={members} names={names} />
               <Field label="Cantidad" name="amount" type="number" placeholder="0.00" />
               <Field label="Nota" name="note" placeholder="Transferencia" required={false} />
-              <button className="min-h-12 rounded-2xl bg-brand px-5 font-extrabold text-white sm:col-span-2">Registrar pago</button>
+              <button className="min-h-12 rounded-2xl bg-gold px-5 font-extrabold text-ink sm:col-span-2">Registrar pago</button>
             </form>
           </ActionCard>
         </section>
@@ -99,7 +99,7 @@ export default async function GroupDetailPage({
         {canInvite ? (
           <section className="mt-6 rounded-[2rem] bg-cream p-6">
             <div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-2xl bg-white text-accent"><UserPlus className="size-5" /></span><div><h2 className="font-extrabold">Invitar integrante</h2><p className="text-sm text-slate-500">El enlace vence en 7 días.</p></div></div>
-            <form action={createInvitation} className="mt-5 flex flex-col gap-3 sm:flex-row"><input type="hidden" name="groupId" value={id} /><input name="email" type="email" placeholder="Correo específico (opcional)" className="min-h-12 min-w-0 flex-1 rounded-2xl border border-white bg-white px-4" /><button className="min-h-12 rounded-2xl bg-accent px-5 font-extrabold text-white">Crear enlace</button></form>
+            <form action={createInvitation} className="mt-5 flex flex-col gap-3 sm:flex-row"><input type="hidden" name="groupId" value={id} /><input name="email" type="email" placeholder="Correo específico (opcional)" className="min-h-12 min-w-0 flex-1 rounded-2xl border border-white bg-white px-4" /><button className="min-h-12 rounded-2xl bg-accent px-5 font-extrabold text-ink">Crear enlace</button></form>
             {invitationUrl ? <div className="mt-4 flex items-center gap-3 rounded-2xl bg-white p-4"><Copy className="size-5 shrink-0 text-teal" /><p className="min-w-0 flex-1 break-all text-sm font-semibold">{invitationUrl}</p></div> : null}
           </section>
         ) : null}

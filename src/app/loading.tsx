@@ -3,13 +3,13 @@ import { WalletCards } from "lucide-react";
 export default function Loading() {
   return (
     <div className="min-h-dvh bg-surface text-ink" role="status" aria-label="Cargando contenido">
-      <header className="safe-header bg-ink text-white">
+      <header className="safe-header bg-cream text-ink">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-5 pb-5 sm:px-8">
-          <span className="grid size-11 place-items-center rounded-2xl bg-accent">
+          <span className="grid size-11 place-items-center rounded-2xl bg-accent text-ink">
             <WalletCards className="size-5" aria-hidden="true" />
           </span>
           <div>
-            <p className="text-xs font-bold text-white/45">MyBudget</p>
+            <p className="text-xs font-bold text-ink/55">MyBudget</p>
             <p className="font-extrabold">Preparando tu información</p>
           </div>
         </div>

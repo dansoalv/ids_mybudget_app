@@ -11,7 +11,7 @@ export default function UpdatePasswordPage() {
       <section className="flex items-center justify-center px-5 py-10 sm:px-10">
         <div className="w-full max-w-md">
           <div className="flex items-center gap-3">
-            <span className="grid size-12 place-items-center rounded-2xl bg-accent text-white"><WalletCards className="size-6" /></span>
+            <span className="grid size-12 place-items-center rounded-2xl bg-accent text-ink"><WalletCards className="size-6" /></span>
             <div><p className="text-xl font-extrabold">MyBudget</p><p className="text-sm text-slate-500">Dinero en equipo</p></div>
           </div>
 
@@ -24,13 +24,13 @@ export default function UpdatePasswordPage() {
         </div>
       </section>
 
-      <section className="relative hidden overflow-hidden bg-ink p-12 text-white lg:flex lg:flex-col lg:justify-end">
-        <div className="absolute -right-28 -top-28 size-96 rounded-full bg-teal/40 blur-3xl" />
-        <div className="absolute -bottom-32 -left-20 size-96 rounded-full bg-brand/35 blur-3xl" />
+      <section className="relative hidden overflow-hidden bg-gold p-12 text-ink lg:flex lg:flex-col lg:justify-end">
+        <div className="absolute -right-28 -top-28 size-96 rounded-full bg-orange/55 blur-3xl" />
+        <div className="absolute -bottom-32 -left-20 size-96 rounded-full bg-accent/35 blur-3xl" />
         <div className="relative max-w-xl">
-          <ShieldCheck className="size-10 text-aqua" />
+          <ShieldCheck className="size-10 text-ink" />
           <h2 className="mt-5 text-5xl font-extrabold leading-tight tracking-[-0.04em]">Una contraseña nueva, la misma información segura.</h2>
-          <p className="mt-5 text-lg leading-8 text-white/60">Al guardarla cerraremos la sesión de recuperación y podrás volver a entrar normalmente.</p>
+          <p className="mt-5 text-lg leading-8 text-ink/65">Al guardarla cerraremos la sesión de recuperación y podrás volver a entrar normalmente.</p>
         </div>
       </section>
     </main>

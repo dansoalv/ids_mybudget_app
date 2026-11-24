@@ -12,7 +12,7 @@ export default function ForgotPasswordPage() {
       <section className="flex items-center justify-center px-5 py-10 sm:px-10">
         <div className="w-full max-w-md">
           <div className="flex items-center gap-3">
-            <span className="grid size-12 place-items-center rounded-2xl bg-accent text-white"><WalletCards className="size-6" /></span>
+            <span className="grid size-12 place-items-center rounded-2xl bg-accent text-ink"><WalletCards className="size-6" /></span>
             <div><p className="text-xl font-extrabold">MyBudget</p><p className="text-sm text-slate-500">Dinero en equipo</p></div>
           </div>
 
@@ -29,13 +29,13 @@ export default function ForgotPasswordPage() {
         </div>
       </section>
 
-      <section className="relative hidden overflow-hidden bg-ink p-12 text-white lg:flex lg:flex-col lg:justify-end">
-        <div className="absolute -right-28 -top-28 size-96 rounded-full bg-brand/35 blur-3xl" />
+      <section className="relative hidden overflow-hidden bg-gold p-12 text-ink lg:flex lg:flex-col lg:justify-end">
+        <div className="absolute -right-28 -top-28 size-96 rounded-full bg-orange/55 blur-3xl" />
         <div className="absolute -bottom-32 -left-20 size-96 rounded-full bg-accent/35 blur-3xl" />
         <div className="relative max-w-xl">
-          <p className="text-sm font-extrabold uppercase tracking-[0.2em] text-aqua">Acceso protegido</p>
+          <p className="text-sm font-extrabold uppercase tracking-[0.2em] text-ink/65">Acceso protegido</p>
           <h2 className="mt-5 text-5xl font-extrabold leading-tight tracking-[-0.04em]">Vuelve a tus finanzas sin perder tus datos.</h2>
-          <p className="mt-5 text-lg leading-8 text-white/60">El enlace es temporal y solo permite establecer una contraseña nueva para tu cuenta.</p>
+          <p className="mt-5 text-lg leading-8 text-ink/65">El enlace es temporal y solo permite establecer una contraseña nueva para tu cuenta.</p>
         </div>
       </section>
     </main>

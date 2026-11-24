@@ -23,7 +23,7 @@ export const dynamic = "force-dynamic";
 const bucketStyle: Record<PlanBucket["id"], { icon: typeof WalletCards; tone: string; bar: string }> = {
   needs: { icon: HeartHandshake, tone: "bg-cream text-accent", bar: "bg-accent" },
   lifestyle: { icon: Sparkles, tone: "bg-aqua/25 text-brand", bar: "bg-teal" },
-  future: { icon: PiggyBank, tone: "bg-brand text-aqua", bar: "bg-brand" },
+  future: { icon: PiggyBank, tone: "bg-orange text-ink", bar: "bg-brand" },
 };
 
 export default async function PlanPage() {
@@ -35,25 +35,25 @@ export default async function PlanPage() {
     <div className="min-h-dvh bg-surface pb-[calc(6.5rem+env(safe-area-inset-bottom))] text-ink lg:pb-12">
       <AppHeader title="Plan" />
       <main className="mx-auto max-w-6xl px-5 py-7 sm:px-8 lg:py-10">
-        <section className="relative overflow-hidden rounded-[2rem] bg-ink p-6 text-white shadow-xl shadow-brand/15 sm:p-9">
-          <div className="absolute -right-16 -top-20 size-64 rounded-full bg-teal/35 blur-3xl" aria-hidden="true" />
+        <section className="relative overflow-hidden rounded-[2rem] bg-gold p-6 text-ink shadow-xl shadow-gold/15 sm:p-9">
+          <div className="absolute -right-16 -top-20 size-64 rounded-full bg-orange/55 blur-3xl" aria-hidden="true" />
           <div className="relative grid items-end gap-8 md:grid-cols-[1fr_auto]">
             <div>
-              <span className="inline-flex rounded-full bg-white/8 px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.14em] text-aqua">Vista informativa · {mode === "live" ? "Datos sincronizados" : "Demostración"}</span>
+              <span className="inline-flex rounded-full bg-white/50 px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.14em] text-ink">Vista informativa · {mode === "live" ? "Datos sincronizados" : "Demostración"}</span>
               <h2 className="mt-5 max-w-2xl text-3xl font-extrabold leading-tight tracking-[-0.04em] sm:text-4xl">Una referencia sencilla para darle intención a tu dinero.</h2>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-white/55">Distribuimos tus ingresos con la guía 50/30/20. No modifica tus movimientos ni establece límites todavía.</p>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-ink/65">Distribuimos tus ingresos con la guía 50/30/20. No modifica tus movimientos ni establece límites todavía.</p>
             </div>
-            <div className="min-w-60 rounded-3xl bg-white/8 p-5">
-              <p className="text-sm font-bold text-white/45">Disponible del periodo</p>
-              <p className="mt-2 text-3xl font-extrabold text-cream">{formatMoney(summary.balanceCents)}</p>
-              <p className="mt-2 text-sm text-white/45">Ingresos menos gastos registrados</p>
+            <div className="min-w-60 rounded-3xl bg-white/50 p-5">
+              <p className="text-sm font-bold text-ink/55">Disponible del periodo</p>
+              <p className="mt-2 text-3xl font-extrabold text-ink">{formatMoney(summary.balanceCents)}</p>
+              <p className="mt-2 text-sm text-ink/55">Ingresos menos gastos registrados</p>
             </div>
           </div>
         </section>
 
         <section className="mt-7">
           <div className="flex flex-wrap items-end justify-between gap-4">
-            <div><p className="text-sm font-extrabold uppercase tracking-[0.14em] text-teal">Referencia mensual</p><h2 className="mt-2 text-2xl font-extrabold">Distribución 50/30/20</h2></div>
+            <div><p className="text-sm font-extrabold uppercase tracking-[0.14em] text-ink/65">Referencia mensual</p><h2 className="mt-2 text-2xl font-extrabold">Distribución 50/30/20</h2></div>
             <p className="max-w-md text-sm leading-6 text-slate-500">Los importes se calculan sobre {formatMoney(summary.incomeCents)} de ingresos registrados.</p>
           </div>
 
@@ -64,7 +64,7 @@ export default async function PlanPage() {
 
         <section className="mt-7 grid gap-6 lg:grid-cols-[1fr_0.8fr]">
           <article className="rounded-[2rem] border border-slate-200/70 bg-white p-6 shadow-sm sm:p-8">
-            <div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-2xl bg-aqua/25 text-brand"><Compass className="size-5" /></span><div><p className="text-sm font-bold text-teal">Cómo leer este plan</p><h2 className="text-xl font-extrabold">Una brújula, no una regla</h2></div></div>
+            <div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-2xl bg-aqua/25 text-brand"><Compass className="size-5" /></span><div><p className="text-sm font-bold text-ink/65">Cómo leer este plan</p><h2 className="text-xl font-extrabold">Una brújula, no una regla</h2></div></div>
             <div className="mt-6 grid gap-4 sm:grid-cols-3">
               <Guidance icon={CircleCheck} title="Observa" description="Compara lo registrado con la referencia del mes." />
               <Guidance icon={Flag} title="Decide" description="Identifica una categoría que quieras ajustar primero." />
@@ -75,7 +75,7 @@ export default async function PlanPage() {
 
           <aside className="rounded-[2rem] bg-cream p-6 sm:p-8">
             <span className="grid size-11 place-items-center rounded-2xl bg-white text-accent"><BellRing className="size-5" /></span>
-            <p className="mt-5 text-sm font-extrabold uppercase tracking-[0.14em] text-accent">Próxima etapa</p>
+            <p className="mt-5 text-sm font-extrabold uppercase tracking-[0.14em] text-ink/65">Próxima etapa</p>
             <h2 className="mt-2 text-2xl font-extrabold">Planes configurables</h2>
             <ul className="mt-5 space-y-3 text-sm font-semibold text-slate-600">
               <li className="flex gap-3"><CircleCheck className="mt-0.5 size-4 shrink-0 text-teal" />Límites por categoría</li>

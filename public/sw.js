@@ -1,4 +1,4 @@
-const CACHE_NAME = "mybudget-shell-v3";
+const CACHE_NAME = "mybudget-shell-v4";
 const OFFLINE_URL = "/offline";
 const STATIC_ASSETS = [OFFLINE_URL, "/app-icon-192.png", "/app-icon-512.png"];
 

@@ -18,7 +18,7 @@ const items = [
 export function MobileNavigation({ active }: { active: (typeof items)[number]["id"] }) {
   return (
     <nav
-      className="safe-bottom-nav fixed inset-x-0 bottom-0 z-20 flex items-center justify-around rounded-t-[1.4rem] border border-slate-200/70 bg-white/95 px-2 pt-2 shadow-xl shadow-slate-900/10 backdrop-blur sm:inset-x-3 sm:rounded-[1.4rem] sm:pb-2 lg:hidden"
+      className="safe-bottom-nav fixed inset-x-0 bottom-0 z-20 flex items-center justify-around rounded-t-[1.4rem] border border-ink/10 bg-white/95 px-2 pt-2 shadow-xl shadow-ink/10 backdrop-blur sm:inset-x-3 sm:rounded-[1.4rem] sm:pb-2 lg:hidden"
       aria-label="Navegación móvil"
     >
       {items.map((item) => {
@@ -31,7 +31,7 @@ export function MobileNavigation({ active }: { active: (typeof items)[number]["i
             aria-current={isActive ? "page" : undefined}
             className={cn(
               "relative flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-1 py-1.5 text-[11px] font-bold",
-              isActive ? "text-brand" : "text-slate-400",
+              isActive ? "text-ink" : "text-ink/45",
             )}
           >
             <Icon className="size-5" strokeWidth={isActive ? 2.5 : 2} aria-hidden="true" />

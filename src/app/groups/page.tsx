@@ -47,17 +47,17 @@ export default async function GroupsPage({ searchParams }: { searchParams: Promi
               </Link>
             ))}
           </div>
-          {!configured ? <p className="mt-5 rounded-2xl bg-cream p-4 text-sm font-semibold text-brand">Vista demostrativa. Conecta Supabase para crear y compartir grupos reales.</p> : null}
+          {!configured ? <p className="mt-5 rounded-2xl bg-cream p-4 text-sm font-semibold text-ink">Vista demostrativa. Conecta Supabase para crear y compartir grupos reales.</p> : null}
         </section>
         <aside className="h-fit rounded-[2rem] bg-white p-6 shadow-sm">
-          <span className="grid size-12 place-items-center rounded-2xl bg-accent text-white"><Plus className="size-6" /></span>
+          <span className="grid size-12 place-items-center rounded-2xl bg-accent text-ink"><Plus className="size-6" /></span>
           <h2 className="mt-5 text-xl font-extrabold">Nuevo grupo</h2>
           <form action={configured ? createGroup : undefined} className="mt-5 space-y-4">
             <label className="block"><span className="text-sm font-bold">Nombre</span><input name="name" required minLength={2} placeholder="Ej. Casa" className="mt-2 min-h-13 w-full rounded-2xl border border-slate-200 px-4 outline-none focus:border-teal" /></label>
             <label className="block"><span className="text-sm font-bold">Tipo</span><select name="kind" className="mt-2 min-h-13 w-full rounded-2xl border border-slate-200 bg-white px-4"><option value="household">Hogar o pareja</option><option value="trip">Viaje</option><option value="friends">Amigos</option><option value="other">Otro</option></select></label>
-            {error ? <p className="text-sm font-semibold text-red-700">{error}</p> : null}
-            {isAtFreeGroupLimit ? <p className="rounded-2xl bg-cream p-4 text-sm font-semibold leading-6 text-brand">Ya utilizaste el grupo incluido en Gratis. <Link href="/profile#subscription" className="underline underline-offset-4">Compara los planes</Link>.</p> : null}
-            <button disabled={!configured || isAtFreeGroupLimit} className="min-h-13 w-full rounded-2xl bg-brand px-5 font-extrabold text-white disabled:opacity-40">Crear grupo</button>
+            {error ? <p className="rounded-xl bg-accent/15 px-3 py-2 text-sm font-semibold text-ink">{error}</p> : null}
+            {isAtFreeGroupLimit ? <p className="rounded-2xl bg-cream p-4 text-sm font-semibold leading-6 text-ink">Ya utilizaste el grupo incluido en Gratis. <Link href="/profile#subscription" className="underline underline-offset-4">Compara los planes</Link>.</p> : null}
+            <button disabled={!configured || isAtFreeGroupLimit} className="min-h-13 w-full rounded-2xl bg-gold px-5 font-extrabold text-ink disabled:opacity-40">Crear grupo</button>
           </form>
         </aside>
       </main>

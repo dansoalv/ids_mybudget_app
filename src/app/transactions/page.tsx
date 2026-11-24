@@ -52,11 +52,11 @@ export default async function TransactionsPage() {
       <main className="mx-auto max-w-6xl px-5 py-7 sm:px-8 lg:py-10">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-sm font-extrabold uppercase tracking-[0.14em] text-teal">Historial financiero</p>
+            <p className="text-sm font-extrabold uppercase tracking-[0.14em] text-ink/65">Historial financiero</p>
             <h2 className="mt-2 text-3xl font-extrabold tracking-[-0.04em]">Todo tu mes, en orden</h2>
             <p className="mt-2 max-w-2xl text-base leading-7 text-slate-500">Consulta ingresos y gastos personales o compartidos. Esta primera versión es informativa y conserva el historial sin edición.</p>
           </div>
-          <span className="rounded-full bg-cream px-4 py-2 text-sm font-extrabold text-brand">Solo consulta · {mode === "live" ? "Datos sincronizados" : "Demostración"}</span>
+          <span className="rounded-full bg-cream px-4 py-2 text-sm font-extrabold text-ink">Solo consulta · {mode === "live" ? "Datos sincronizados" : "Demostración"}</span>
         </div>
 
         <section className="mt-7 grid gap-4 sm:grid-cols-3" aria-label="Totales de movimientos">
@@ -83,8 +83,8 @@ export default async function TransactionsPage() {
             {transactions.length === 0 ? <div className="py-16 text-center"><ReceiptText className="mx-auto size-8 text-slate-300" /><p className="mt-4 font-bold text-slate-500">Aún no hay movimientos</p><p className="mt-1 text-sm text-slate-400">Los movimientos nuevos aparecerán aquí.</p></div> : null}
           </article>
 
-          <aside className="rounded-[2rem] bg-ink p-6 text-white lg:sticky lg:top-6">
-            <p className="text-sm font-semibold text-white/50">Distribución de gastos</p>
+          <aside className="rounded-[2rem] bg-orange p-6 text-ink lg:sticky lg:top-6">
+            <p className="text-sm font-semibold text-ink/55">Distribución de gastos</p>
             <h2 className="mt-1 text-xl font-extrabold">Por categoría</h2>
             <div className="mt-6 space-y-5">
               {categoryTotals.map((item) => {
@@ -92,13 +92,13 @@ export default async function TransactionsPage() {
                 const percent = summary.expenseCents > 0 ? Math.round((item.amountCents / summary.expenseCents) * 100) : 0;
                 return (
                   <div key={item.category}>
-                    <div className="flex items-center justify-between gap-3 text-sm"><span className="font-bold">{meta.label}</span><span className="text-white/65">{formatMoney(item.amountCents)}</span></div>
-                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10"><div className={cn("h-full rounded-full", meta.bar)} style={{ width: `${percent}%` }} /></div>
-                    <p className="mt-1 text-right text-xs font-bold text-white/35">{percent}%</p>
+                    <div className="flex items-center justify-between gap-3 text-sm"><span className="font-bold">{meta.label}</span><span className="text-ink/65">{formatMoney(item.amountCents)}</span></div>
+                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-ink/10"><div className={cn("h-full rounded-full", meta.bar)} style={{ width: `${percent}%` }} /></div>
+                    <p className="mt-1 text-right text-xs font-bold text-ink/50">{percent}%</p>
                   </div>
                 );
               })}
-              {categoryTotals.length === 0 ? <p className="text-sm leading-6 text-white/50">Registra gastos para ver su distribución.</p> : null}
+              {categoryTotals.length === 0 ? <p className="text-sm leading-6 text-ink/60">Registra gastos para ver su distribución.</p> : null}
             </div>
           </aside>
         </section>
@@ -109,14 +109,14 @@ export default async function TransactionsPage() {
 }
 
 function Metric({ label, amount, icon: Icon, tone }: { label: string; amount: number; icon: typeof ArrowDownLeft; tone: "positive" | "negative" | "balance" }) {
-  return <article className={cn("rounded-[1.75rem] p-5", tone === "balance" ? "bg-brand text-white" : "border border-slate-200/70 bg-white")}><span className={cn("grid size-10 place-items-center rounded-2xl", tone === "positive" ? "bg-aqua/25 text-brand" : tone === "negative" ? "bg-cream text-accent" : "bg-white/10 text-aqua")}><Icon className="size-5" /></span><p className={cn("mt-4 text-sm font-bold", tone === "balance" ? "text-white/55" : "text-slate-500")}>{label}</p><p className="mt-1 text-2xl font-extrabold tracking-tight">{formatMoney(amount)}</p></article>;
+  return <article className={cn("rounded-[1.75rem] p-5", tone === "balance" ? "bg-gold text-ink" : "border border-slate-200/70 bg-white")}><span className={cn("grid size-10 place-items-center rounded-2xl", tone === "positive" ? "bg-aqua/25 text-brand" : tone === "negative" ? "bg-cream text-accent" : "bg-white/50 text-ink")}><Icon className="size-5" /></span><p className={cn("mt-4 text-sm font-bold", tone === "balance" ? "text-ink/60" : "text-slate-500")}>{label}</p><p className="mt-1 text-2xl font-extrabold tracking-tight">{formatMoney(amount)}</p></article>;
 }
 
 function TransactionItem({ transaction }: { transaction: Transaction }) {
   const meta = categoryMeta[transaction.category];
   const Icon = meta.icon;
   const date = new Intl.DateTimeFormat("es-MX", { day: "numeric", month: "short" }).format(new Date(transaction.occurredAt));
-  return <div className="flex items-center gap-3 py-4 sm:gap-4"><span className={cn("grid size-11 shrink-0 place-items-center rounded-2xl", meta.tone)}><Icon className="size-5" /></span><div className="min-w-0 flex-1"><div className="flex items-center gap-2"><p className="truncate font-bold">{transaction.title}</p>{transaction.scope === "shared" ? <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-extrabold text-slate-500">Compartido</span> : null}</div><p className="mt-0.5 truncate text-sm text-slate-500">{meta.label} · {transaction.groupName ?? date}</p></div><p className={cn("whitespace-nowrap font-extrabold", transaction.type === "income" ? "text-teal" : "text-ink")}>{transaction.type === "income" ? "+" : "−"}{formatMoney(transaction.amountCents)}</p></div>;
+  return <div className="flex items-center gap-3 py-4 sm:gap-4"><span className={cn("grid size-11 shrink-0 place-items-center rounded-2xl", meta.tone)}><Icon className="size-5" /></span><div className="min-w-0 flex-1"><div className="flex items-center gap-2"><p className="truncate font-bold">{transaction.title}</p>{transaction.scope === "shared" ? <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-extrabold text-slate-500">Compartido</span> : null}</div><p className="mt-0.5 truncate text-sm text-slate-500">{meta.label} · {transaction.groupName ?? date}</p></div><p className="whitespace-nowrap font-extrabold text-ink">{transaction.type === "income" ? "+" : "−"}{formatMoney(transaction.amountCents)}</p></div>;
 }
 
 function groupTransactionsByMonth(transactions: Transaction[]) {

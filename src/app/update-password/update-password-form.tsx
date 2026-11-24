@@ -15,9 +15,9 @@ export function UpdatePasswordForm() {
       <PasswordField label="Contraseña nueva" name="password" autoComplete="new-password" />
       <PasswordField label="Confirma la contraseña" name="confirmPassword" autoComplete="new-password" />
 
-      {state.error ? <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700" role="alert">{state.error}</p> : null}
+      {state.error ? <p className="rounded-2xl bg-accent/15 px-4 py-3 text-sm font-semibold text-ink" role="alert">{state.error}</p> : null}
 
-      <button disabled={pending} className="flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-accent px-5 font-extrabold text-white shadow-lg shadow-accent/20 disabled:opacity-60">
+      <button disabled={pending} className="flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-accent px-5 font-extrabold text-ink shadow-lg shadow-accent/20 disabled:opacity-60">
         {pending ? <LoaderCircle className="size-5 animate-spin" aria-hidden="true" /> : null}
         Guardar contraseña nueva
       </button>

@@ -12,7 +12,7 @@ export default function OfflinePage() {
         <p className="mt-3 text-sm leading-6 text-slate-500">
           Tus movimientos nuevos quedan guardados en este dispositivo y se sincronizan al recuperar internet.
         </p>
-        <Link href="/" className="mt-6 inline-flex min-h-12 items-center rounded-2xl bg-brand px-5 font-bold text-white">
+        <Link href="/" className="mt-6 inline-flex min-h-12 items-center rounded-2xl bg-gold px-5 font-bold text-ink">
           Volver a intentar
         </Link>
       </section>

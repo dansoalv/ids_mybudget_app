@@ -114,14 +114,14 @@ export function Dashboard({ initialTransactions, initialSharedBalances, user, da
 
   return (
     <div className="min-h-dvh bg-surface text-ink">
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 flex-col bg-ink px-6 py-8 text-white lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 flex-col bg-gold px-6 py-8 text-ink lg:flex">
         <div className="flex items-center gap-3 px-2">
-          <div className="grid size-11 place-items-center rounded-2xl bg-accent text-cream shadow-lg shadow-black/20">
+          <div className="grid size-11 place-items-center rounded-2xl bg-accent text-ink shadow-lg shadow-black/15">
             <WalletCards className="size-6" aria-hidden="true" />
           </div>
           <div>
             <p className="text-xl font-extrabold tracking-tight">MyBudget</p>
-            <p className="text-sm text-white/55">Dinero en equipo</p>
+            <p className="text-sm text-ink/60">Dinero en equipo</p>
           </div>
         </div>
 
@@ -135,8 +135,8 @@ export function Dashboard({ initialTransactions, initialSharedBalances, user, da
                 className={cn(
                   "relative flex w-full items-center gap-3 rounded-2xl px-4 py-3.5 text-left text-[15px] font-semibold transition",
                   item.active
-                    ? "bg-cream text-brand shadow-sm"
-                    : "text-white/65 hover:bg-white/8 hover:text-white",
+                    ? "bg-white/80 text-ink shadow-sm"
+                    : "text-ink/65 hover:bg-white/45 hover:text-ink",
                 )}
               >
                 <Icon className="size-5" strokeWidth={2.2} aria-hidden="true" />
@@ -147,12 +147,12 @@ export function Dashboard({ initialTransactions, initialSharedBalances, user, da
           })}
         </nav>
 
-        <div className="mt-auto rounded-3xl bg-white/8 p-5">
-          <div className="mb-3 grid size-10 place-items-center rounded-2xl bg-aqua/15 text-aqua">
+        <div className="mt-auto rounded-3xl bg-white/45 p-5">
+          <div className="mb-3 grid size-10 place-items-center rounded-2xl bg-orange text-ink">
             <Sparkles className="size-5" aria-hidden="true" />
           </div>
           <p className="font-bold">Tu mes, más claro</p>
-          <p className="mt-1 text-sm leading-5 text-white/55">
+          <p className="mt-1 text-sm leading-5 text-ink/60">
             {transactions.length === 1 ? "Has registrado 1 movimiento." : `Has registrado ${transactions.length} movimientos.`}
           </p>
         </div>
@@ -161,15 +161,15 @@ export function Dashboard({ initialTransactions, initialSharedBalances, user, da
             <span className="grid size-10 place-items-center rounded-full bg-aqua font-bold text-ink">{user.initials}</span>
           <span className="min-w-0 flex-1">
             <span className="block truncate text-sm font-bold">{user.displayName}</span>
-            <span className="block truncate text-xs text-white/50">{dataMode === "live" ? "Cuenta sincronizada" : "Modo demostración"}</span>
+            <span className="block truncate text-xs text-ink/55">{dataMode === "live" ? "Cuenta sincronizada" : "Modo demostración"}</span>
           </span>
           {dataMode === "live" ? (
             <form action={signOut}>
-              <button type="submit" className="grid size-10 place-items-center rounded-xl text-white/45 hover:bg-white/8 hover:text-white" aria-label="Cerrar sesión">
+              <button type="submit" className="grid size-10 place-items-center rounded-xl text-ink/50 hover:bg-white/45 hover:text-ink" aria-label="Cerrar sesión">
                 <LogOut className="size-5" aria-hidden="true" />
               </button>
             </form>
-          ) : <MoreHorizontal className="size-5 text-white/45" aria-hidden="true" />}
+          ) : <MoreHorizontal className="size-5 text-ink/50" aria-hidden="true" />}
         </div>
       </aside>
 
@@ -185,7 +185,7 @@ export function Dashboard({ initialTransactions, initialSharedBalances, user, da
             <button
               type="button"
               onClick={() => setIsFormOpen(true)}
-              className="hidden min-h-12 items-center gap-2 rounded-2xl bg-accent px-5 text-sm font-bold text-white shadow-lg shadow-accent/20 transition hover:-translate-y-0.5 hover:bg-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:flex"
+              className="hidden min-h-12 items-center gap-2 rounded-2xl bg-accent px-5 text-sm font-bold text-ink shadow-lg shadow-accent/20 transition hover:-translate-y-0.5 hover:bg-orange focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:flex"
             >
               <Plus className="size-5" aria-hidden="true" />
               Nuevo movimiento
@@ -193,23 +193,23 @@ export function Dashboard({ initialTransactions, initialSharedBalances, user, da
           </header>
 
           <section className="mt-7 grid gap-4 lg:grid-cols-[1.35fr_0.8fr_0.8fr]" aria-label="Resumen del mes">
-            <article className="relative overflow-hidden rounded-[2rem] bg-brand p-6 text-white shadow-xl shadow-brand/20 sm:p-7">
-              <div className="absolute -right-10 -top-16 size-44 rounded-full border-[34px] border-aqua/15" aria-hidden="true" />
+            <article className="relative overflow-hidden rounded-[2rem] bg-gold p-6 text-ink shadow-xl shadow-gold/20 sm:p-7">
+              <div className="absolute -right-10 -top-16 size-44 rounded-full border-[34px] border-orange/30" aria-hidden="true" />
               <div className="relative">
                 <div className="flex items-center justify-between gap-4">
-                  <p className="text-sm font-semibold text-white/65">Balance disponible</p>
-                  <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-white/75">Noviembre</span>
+                  <p className="text-sm font-semibold text-ink/65">Balance disponible</p>
+                  <span className="rounded-full bg-white/50 px-3 py-1 text-xs font-bold text-ink/75">Noviembre</span>
                 </div>
                 <p className="mt-4 text-4xl font-extrabold tracking-[-0.045em] sm:text-[2.75rem]">
                   {formatMoney(summary.balanceCents)}
                 </p>
-                <div className="mt-7 flex gap-7 border-t border-white/10 pt-5">
+                <div className="mt-7 flex gap-7 border-t border-ink/10 pt-5">
                   <div>
-                    <p className="text-xs font-semibold text-white/50">Ingresos</p>
-                    <p className="mt-1 font-bold text-cream">{formatMoney(summary.incomeCents)}</p>
+                    <p className="text-xs font-semibold text-ink/55">Ingresos</p>
+                    <p className="mt-1 font-bold text-ink">{formatMoney(summary.incomeCents)}</p>
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-white/50">Gastos</p>
+                    <p className="text-xs font-semibold text-ink/55">Gastos</p>
                     <p className="mt-1 font-bold">{formatMoney(summary.expenseCents)}</p>
                   </div>
                 </div>
@@ -239,7 +239,7 @@ export function Dashboard({ initialTransactions, initialSharedBalances, user, da
                   <h2 className="text-lg font-extrabold tracking-tight">Movimientos recientes</h2>
                   <p className="mt-1 text-sm text-slate-500">Tu actividad personal y compartida</p>
                 </div>
-                <button type="button" className="flex min-h-11 items-center gap-1 rounded-xl px-3 text-sm font-bold text-teal hover:bg-aqua/15">
+                <button type="button" className="flex min-h-11 items-center gap-1 rounded-xl px-3 text-sm font-bold text-ink hover:bg-aqua/35">
                   Ver todos
                   <ChevronRight className="size-4" aria-hidden="true" />
                 </button>
@@ -264,7 +264,7 @@ export function Dashboard({ initialTransactions, initialSharedBalances, user, da
                   </button>
                 </div>
                 <div className="mt-6 flex items-center gap-6">
-                  <div className="relative size-28 shrink-0 rounded-full bg-[conic-gradient(#2563EB_0_54%,#0F766E_54%_78%,#7C3AED_78%_91%,#A7F3D0_91%_100%)]">
+                  <div className="relative size-28 shrink-0 rounded-full bg-[conic-gradient(#0D3B66_0_54%,#EE964B_54%_78%,#F95738_78%_91%,#F4D35E_91%_100%)]">
                     <div className="absolute inset-4 grid place-items-center rounded-full bg-white text-center">
                       <div>
                         <p className="text-xs font-semibold text-slate-400">Total</p>
@@ -274,9 +274,9 @@ export function Dashboard({ initialTransactions, initialSharedBalances, user, da
                   </div>
                   <div className="min-w-0 flex-1 space-y-3 text-sm">
                     <Legend color="bg-brand" label="Hogar" value="54%" />
-                    <Legend color="bg-teal" label="Alimentos" value="24%" />
+                    <Legend color="bg-orange" label="Alimentos" value="24%" />
                     <Legend color="bg-accent" label="Transporte" value="13%" />
-                    <Legend color="bg-aqua" label="Otros" value="9%" />
+                    <Legend color="bg-gold" label="Otros" value="9%" />
                   </div>
                 </div>
               </article>
@@ -294,7 +294,7 @@ export function Dashboard({ initialTransactions, initialSharedBalances, user, da
                 <div className="mt-5 space-y-3">
                   {initialSharedBalances.map((balance) => (
                     <div key={balance.id} className="flex items-center gap-3 rounded-2xl bg-white/85 p-3.5">
-                      <span className="grid size-10 shrink-0 place-items-center rounded-full bg-brand text-sm font-bold text-white">
+                      <span className="grid size-10 shrink-0 place-items-center rounded-full bg-orange text-sm font-bold text-ink">
                         {balance.memberName.slice(0, 1)}
                       </span>
                       <div className="min-w-0 flex-1">
@@ -305,7 +305,7 @@ export function Dashboard({ initialTransactions, initialSharedBalances, user, da
                             : `Debes a ${balance.memberName}`}
                         </p>
                       </div>
-                      <p className={cn("text-sm font-extrabold", balance.direction === "owed_to_you" ? "text-teal" : "text-accent")}> 
+                      <p className="text-sm font-extrabold text-ink">
                         {formatMoney(balance.amountCents)}
                       </p>
                     </div>
@@ -321,17 +321,17 @@ export function Dashboard({ initialTransactions, initialSharedBalances, user, da
       <button
         type="button"
         onClick={() => setIsFormOpen(true)}
-        className="safe-fab fixed right-5 z-30 grid size-14 place-items-center rounded-2xl bg-accent text-white shadow-xl shadow-accent/30 sm:hidden"
+        className="safe-fab fixed right-5 z-30 grid size-14 place-items-center rounded-2xl bg-accent text-ink shadow-xl shadow-accent/30 sm:hidden"
         aria-label="Agregar movimiento"
       >
         <Plus className="size-6" aria-hidden="true" />
       </button>
 
-      <nav className="safe-bottom-nav fixed inset-x-0 bottom-0 z-20 flex items-center justify-around rounded-t-[1.4rem] border border-slate-200/70 bg-white/95 px-2 pt-2 shadow-xl shadow-slate-900/10 backdrop-blur sm:inset-x-3 sm:rounded-[1.4rem] sm:pb-2 lg:hidden" aria-label="Navegación móvil">
+      <nav className="safe-bottom-nav fixed inset-x-0 bottom-0 z-20 flex items-center justify-around rounded-t-[1.4rem] border border-ink/10 bg-white/95 px-2 pt-2 shadow-xl shadow-ink/10 backdrop-blur sm:inset-x-3 sm:rounded-[1.4rem] sm:pb-2 lg:hidden" aria-label="Navegación móvil">
         {navigation.map((item) => {
           const Icon = item.icon;
           return (
-            <Link key={item.label} href={item.href} className={cn("relative flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-1 py-1.5 text-[11px] font-bold", item.active ? "text-brand" : "text-slate-400")}>
+            <Link key={item.label} href={item.href} className={cn("relative flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-1 py-1.5 text-[11px] font-bold", item.active ? "text-ink" : "text-ink/45")}>
               <Icon className="size-5" strokeWidth={item.active ? 2.5 : 2} aria-hidden="true" />
               {item.label === "Presupuesto" ? "Plan" : item.label}
               <LinkPendingIndicator />
@@ -346,7 +346,7 @@ export function Dashboard({ initialTransactions, initialSharedBalances, user, da
 
       <div className="safe-notice pointer-events-none fixed inset-x-4 z-50 flex justify-center" aria-live="polite">
         {notice ? (
-          <div className="rounded-2xl bg-brand px-5 py-3 text-sm font-bold text-white shadow-xl">{notice}</div>
+          <div className="rounded-2xl bg-gold px-5 py-3 text-sm font-bold text-ink shadow-xl">{notice}</div>
         ) : null}
       </div>
     </div>
@@ -402,7 +402,7 @@ function TransactionRow({ transaction }: { transaction: Transaction }) {
           {meta.label} · {transaction.groupName ?? date}
         </p>
       </div>
-      <p className={cn("whitespace-nowrap text-sm font-extrabold sm:text-[15px]", transaction.type === "income" ? "text-teal" : "text-ink")}>
+      <p className="whitespace-nowrap text-sm font-extrabold text-ink sm:text-[15px]">
         {transaction.type === "income" ? "+" : "−"}{formatMoney(transaction.amountCents)}
       </p>
     </div>
@@ -477,11 +477,11 @@ function QuickTransactionForm({
   }
 
   return (
-    <div className="visual-viewport-overlay fixed inset-x-0 z-40 flex items-end justify-center overflow-hidden bg-ink/65 p-0 backdrop-blur-sm sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-labelledby="transaction-title" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+    <div className="visual-viewport-overlay fixed inset-x-0 z-40 flex items-end justify-center overflow-hidden bg-navy/65 p-0 backdrop-blur-sm sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-labelledby="transaction-title" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <div className="safe-dialog-panel w-full overflow-y-auto rounded-t-[2rem] bg-white p-5 shadow-2xl sm:max-h-[calc(100dvh-3rem)] sm:max-w-lg sm:rounded-[2rem] sm:p-7">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-teal">Registro rápido</p>
+            <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-ink/65">Registro rápido</p>
             <h2 id="transaction-title" className="mt-1 text-2xl font-extrabold tracking-tight">Nuevo movimiento</h2>
           </div>
           <button type="button" onClick={onClose} className="grid size-11 place-items-center rounded-2xl bg-slate-100 text-slate-600 hover:bg-slate-200" aria-label="Cerrar">
@@ -515,7 +515,7 @@ function QuickTransactionForm({
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <label className="block">
               <span className="text-sm font-bold text-slate-700">Categoría</span>
-              <select name="category" defaultValue={type === "income" ? "salary" : "food"} className="mt-2 min-h-13 w-full appearance-none rounded-2xl border border-slate-200 bg-[linear-gradient(45deg,transparent_50%,#0F766E_50%),linear-gradient(135deg,#0F766E_50%,transparent_50%)] bg-[position:calc(100%-20px)_22px,calc(100%-15px)_22px] bg-[size:5px_5px,5px_5px] bg-no-repeat px-4 text-sm font-semibold outline-none focus:border-teal focus:ring-4 focus:ring-aqua/20">
+              <select name="category" defaultValue={type === "income" ? "salary" : "food"} className="mt-2 min-h-13 w-full appearance-none rounded-2xl border border-slate-200 bg-[linear-gradient(45deg,transparent_50%,#0D3B66_50%),linear-gradient(135deg,#0D3B66_50%,transparent_50%)] bg-[position:calc(100%-20px)_22px,calc(100%-15px)_22px] bg-[size:5px_5px,5px_5px] bg-no-repeat px-4 text-sm font-semibold outline-none focus:border-teal focus:ring-4 focus:ring-aqua/20">
                 {Object.entries(categoryMeta).map(([value, meta]) => <option key={value} value={value}>{meta.label}</option>)}
               </select>
             </label>
@@ -523,23 +523,23 @@ function QuickTransactionForm({
               <span className="text-sm font-bold text-slate-700">¿Para quién?</span>
               <div className="mt-2 grid grid-cols-2 gap-2">
                 {(["personal", ...(allowShared ? ["shared" as const] : [])] as const).map((option) => (
-                  <button key={option} type="button" onClick={() => setScope(option)} className={cn("min-h-13 rounded-2xl border text-sm font-bold", scope === option ? "border-brand bg-brand text-white" : "border-slate-200 bg-white text-slate-600")}>
+                  <button key={option} type="button" onClick={() => setScope(option)} className={cn("min-h-13 rounded-2xl border text-sm font-bold", scope === option ? "border-gold bg-gold text-ink" : "border-slate-200 bg-white text-slate-600")}>
                     {option === "personal" ? "Personal" : "Casa"}
                   </button>
                 ))}
               </div>
-              {!allowShared ? <Link href="/groups" className="mt-2 block text-xs font-bold text-teal">Registra gastos compartidos desde Grupos →</Link> : null}
+              {!allowShared ? <Link href="/groups" className="mt-2 block text-xs font-bold text-ink underline underline-offset-4">Registra gastos compartidos desde Grupos →</Link> : null}
             </div>
           </div>
 
-          {error ? <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700" role="alert">{error}</p> : null}
+          {error ? <p className="mt-4 rounded-xl bg-accent/15 px-4 py-3 text-sm font-semibold text-ink" role="alert">{error}</p> : null}
 
           <div className="mt-6 flex items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-500">
             <CalendarDays className="size-5 text-slate-400" aria-hidden="true" />
             Se registrará con la fecha y hora actuales
           </div>
 
-          <button type="submit" className="mt-5 min-h-14 w-full rounded-2xl bg-accent px-5 text-base font-extrabold text-white shadow-lg shadow-accent/20 transition hover:bg-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+          <button type="submit" className="mt-5 min-h-14 w-full rounded-2xl bg-accent px-5 text-base font-extrabold text-ink shadow-lg shadow-accent/20 transition hover:bg-orange focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
             Guardar movimiento
           </button>
         </form>

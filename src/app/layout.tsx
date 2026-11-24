@@ -1,8 +1,15 @@
 import type { Metadata, Viewport } from "next";
+import { Montserrat } from "next/font/google";
 
 import { PwaProvider } from "@/components/pwa-provider";
 
 import "./globals.css";
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-montserrat",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -13,7 +20,7 @@ export const metadata: Metadata = {
   applicationName: "MyBudget",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
     title: "MyBudget",
   },
   icons: {
@@ -26,12 +33,12 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#0b1220",
+  themeColor: "#faf0ca",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es-MX">
+    <html lang="es-MX" className={montserrat.variable}>
       <body>
         <PwaProvider />
         {children}
