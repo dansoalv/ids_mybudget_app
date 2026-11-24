@@ -46,9 +46,9 @@ const categoryMeta: Record<
 
 const navigation = [
   { label: "Inicio", icon: Home, href: "/", active: true },
-  { label: "Movimientos", icon: ReceiptText, href: "/" },
+  { label: "Movimientos", icon: ReceiptText, href: "/transactions" },
   { label: "Grupos", icon: Users, href: "/groups" },
-  { label: "Presupuesto", icon: WalletCards, href: "/" },
+  { label: "Presupuesto", icon: WalletCards, href: "/plan" },
 ];
 
 type DashboardProps = {

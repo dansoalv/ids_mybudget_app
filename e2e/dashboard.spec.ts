@@ -22,6 +22,18 @@ test("abre la sección de grupos desde la navegación", async ({ page }) => {
   await expect(page.getByText("Vista demostrativa")).toBeVisible();
 });
 
+test("consulta los módulos informativos de movimientos y plan", async ({ page }) => {
+  await page.goto("/transactions");
+  await expect(page.getByRole("heading", { name: "Todo tu mes, en orden" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Historial" })).toBeVisible();
+  await expect(page.getByText("Solo consulta")).toBeVisible();
+
+  await page.goto("/plan");
+  await expect(page.getByRole("heading", { name: /Una referencia sencilla/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Distribución 50/30/20" })).toBeVisible();
+  await expect(page.getByText("Próxima etapa")).toBeVisible();
+});
+
 test("mantiene los controles dentro del viewport móvil", async ({ page }) => {
   const viewport = page.viewportSize();
   test.skip(!viewport || viewport.width >= 640, "Validación exclusiva para layouts móviles");
