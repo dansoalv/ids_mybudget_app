@@ -30,12 +30,15 @@ test("muestra la información básica del perfil", async ({ page }) => {
 
   await expect(page.getByRole("heading", { name: "Daniel Sánchez" })).toBeVisible();
   await expect(page.getByText("daniel@ejemplo.com")).toBeVisible();
-  await expect(page.getByText("Moneda principal")).toBeVisible();
+  await expect(page.getByText("Moneda")).toBeVisible();
   await expect(page.getByText("Español (México)")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Un plan para cada etapa" })).toBeVisible();
-  await expect(page.getByText("Plan actual: Gratis")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Plus" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Familia" })).toBeVisible();
+  await page.getByRole("tab", { name: "Suscripción" }).click();
+  await expect(page.getByRole("heading", { name: "Gratis", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Plus", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Plan Plus" })).toBeVisible();
+  await expect(page.getByText("Grupos ilimitados")).toBeVisible();
+  await page.getByRole("button", { name: "Familia", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Plan Familia" })).toBeVisible();
   if ((page.viewportSize()?.width ?? 1024) < 1024) {
     await expect(page.getByRole("link", { name: /Perfil/ })).toHaveAttribute("aria-current", "page");
   }
