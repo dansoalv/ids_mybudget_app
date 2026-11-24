@@ -116,11 +116,11 @@ a:active {
 }
 
 .safe-header {
-  padding-top: max(1.25rem, calc(env(safe-area-inset-top) + 0.875rem));
+  padding-top: max(1.5rem, calc(env(safe-area-inset-top, 0px) + 1rem));
 }
 
 .safe-dashboard-content {
-  padding-top: max(1.25rem, calc(env(safe-area-inset-top) + 0.875rem));
+  padding-top: max(1.5rem, calc(env(safe-area-inset-top, 0px) + 1rem));
 }
 
 .safe-dashboard-main {

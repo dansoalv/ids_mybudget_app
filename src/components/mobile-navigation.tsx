@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Home, ReceiptText, Users, WalletCards } from "lucide-react";
+import { Home, ReceiptText, UserRound, Users, WalletCards } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -12,6 +12,7 @@ const items = [
   { id: "transactions", label: "Movimientos", href: "/transactions", icon: ReceiptText },
   { id: "groups", label: "Grupos", href: "/groups", icon: Users },
   { id: "plan", label: "Plan", href: "/plan", icon: WalletCards },
+  { id: "profile", label: "Perfil", href: "/profile", icon: UserRound },
 ] as const;
 
 export function MobileNavigation({ active }: { active: (typeof items)[number]["id"] }) {
@@ -29,7 +30,7 @@ export function MobileNavigation({ active }: { active: (typeof items)[number]["i
             href={item.href}
             aria-current={isActive ? "page" : undefined}
             className={cn(
-              "relative flex min-w-16 flex-col items-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-bold",
+              "relative flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-1 py-1.5 text-[11px] font-bold",
               isActive ? "text-brand" : "text-slate-400",
             )}
           >

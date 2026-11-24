@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { Copy, HandCoins, ReceiptText, UserPlus, Users } from "lucide-react";
 
 import { AppHeader } from "@/components/app-header";
+import { MobileNavigation } from "@/components/mobile-navigation";
 import { createInvitation, createSettlement, createSharedExpense } from "@/app/groups/actions";
 import { requireUser } from "@/lib/auth";
 import { formatMoney } from "@/lib/money";
@@ -37,7 +38,7 @@ export default async function GroupDetailPage({
   const invitationUrl = query.invite ? `${appUrl}/invite/${query.invite}` : null;
 
   return (
-    <div className="min-h-dvh bg-surface pb-[env(safe-area-inset-bottom)] text-ink">
+    <div className="min-h-dvh bg-surface pb-[calc(6.5rem+env(safe-area-inset-bottom))] text-ink lg:pb-12">
       <AppHeader title={group.name} backHref="/groups" />
       <main className="mx-auto max-w-6xl px-5 py-8 sm:px-8">
         {(query.error || query.success) ? (
@@ -111,6 +112,7 @@ export default async function GroupDetailPage({
           </div>
         </section>
       </main>
+      <MobileNavigation active="groups" />
     </div>
   );
 }

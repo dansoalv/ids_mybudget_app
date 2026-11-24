@@ -20,6 +20,21 @@ test("abre la sección de grupos desde la navegación", async ({ page }) => {
   await page.getByRole("link", { name: /Grupos/ }).first().click();
   await expect(page.getByRole("heading", { name: "Gastos en equipo" })).toBeVisible();
   await expect(page.getByText("Vista demostrativa")).toBeVisible();
+  if ((page.viewportSize()?.width ?? 1024) < 1024) {
+    await expect(page.getByRole("navigation", { name: "Navegación móvil" })).toContainText("Perfil");
+  }
+});
+
+test("muestra la información básica del perfil", async ({ page }) => {
+  await page.goto("/profile");
+
+  await expect(page.getByRole("heading", { name: "Daniel Sánchez" })).toBeVisible();
+  await expect(page.getByText("daniel@ejemplo.com")).toBeVisible();
+  await expect(page.getByText("Moneda principal")).toBeVisible();
+  await expect(page.getByText("Español (México)")).toBeVisible();
+  if ((page.viewportSize()?.width ?? 1024) < 1024) {
+    await expect(page.getByRole("link", { name: /Perfil/ })).toHaveAttribute("aria-current", "page");
+  }
 });
 
 test("consulta los módulos informativos de movimientos y plan", async ({ page }) => {

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Plus, Users } from "lucide-react";
 
 import { AppHeader } from "@/components/app-header";
+import { MobileNavigation } from "@/components/mobile-navigation";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { requireUser } from "@/lib/auth";
 
@@ -18,7 +19,7 @@ export default async function GroupsPage({ searchParams }: { searchParams: Promi
       ];
 
   return (
-    <div className="min-h-dvh bg-surface pb-[env(safe-area-inset-bottom)] text-ink">
+    <div className="min-h-dvh bg-surface pb-[calc(6.5rem+env(safe-area-inset-bottom))] text-ink lg:pb-12">
       <AppHeader title="Grupos" />
       <main className="mx-auto grid max-w-6xl gap-6 px-5 py-8 sm:px-8 lg:grid-cols-[1fr_380px]">
         <section>
@@ -46,6 +47,7 @@ export default async function GroupsPage({ searchParams }: { searchParams: Promi
           </form>
         </aside>
       </main>
+      <MobileNavigation active="groups" />
     </div>
   );
 }

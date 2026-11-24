@@ -14,6 +14,7 @@ import {
   Plus,
   ReceiptText,
   Sparkles,
+  UserRound,
   Users,
   Utensils,
   WalletCards,
@@ -50,6 +51,7 @@ const navigation = [
   { label: "Movimientos", icon: ReceiptText, href: "/transactions" },
   { label: "Grupos", icon: Users, href: "/groups" },
   { label: "Presupuesto", icon: WalletCards, href: "/plan" },
+  { label: "Perfil", icon: UserRound, href: "/profile" },
 ];
 
 type DashboardProps = {
@@ -329,7 +331,7 @@ export function Dashboard({ initialTransactions, initialSharedBalances, user, da
         {navigation.map((item) => {
           const Icon = item.icon;
           return (
-            <Link key={item.label} href={item.href} className={cn("relative flex min-w-16 flex-col items-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-bold", item.active ? "text-brand" : "text-slate-400")}>
+            <Link key={item.label} href={item.href} className={cn("relative flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-1 py-1.5 text-[11px] font-bold", item.active ? "text-brand" : "text-slate-400")}>
               <Icon className="size-5" strokeWidth={item.active ? 2.5 : 2} aria-hidden="true" />
               {item.label === "Presupuesto" ? "Plan" : item.label}
               <LinkPendingIndicator />
