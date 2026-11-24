@@ -1,0 +1,135 @@
+"use server";
+
+import { createHash, randomBytes } from "node:crypto";
+import { redirect } from "next/navigation";
+import { z } from "zod";
+
+import { requireUser } from "@/lib/auth";
+
+const groupSchema = z.object({
+  name: z.string().trim().min(2).max(80),
+  kind: z.enum(["household", "trip", "friends", "other"]),
+});
+
+function fail(path: string, message: string): never {
+  redirect(`${path}?error=${encodeURIComponent(message)}`);
+}
+
+export async function createGroup(formData: FormData) {
+  const parsed = groupSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) fail("/groups", "Revisa el nombre y el tipo de grupo");
+
+  const { supabase, user } = await requireUser();
+  const { data, error } = await supabase
+    .from("groups")
+    .insert({ owner_id: user.id, name: parsed.data.name, kind: parsed.data.kind, currency: "MXN" })
+    .select("id")
+    .single();
+
+  if (error || !data) fail("/groups", "No pudimos crear el grupo");
+  redirect(`/groups/${data.id}`);
+}
+
+export async function createInvitation(formData: FormData) {
+  const groupId = z.uuid().safeParse(formData.get("groupId"));
+  const email = z.union([z.literal(""), z.email()]).safeParse(formData.get("email") ?? "");
+  if (!groupId.success || !email.success) fail("/groups", "Invitación inválida");
+
+  const { supabase, user } = await requireUser();
+  const token = randomBytes(32).toString("base64url");
+  const tokenHash = createHash("sha256").update(token).digest("hex");
+  const { error } = await supabase.from("group_invitations").insert({
+    group_id: groupId.data,
+    email: email.data || null,
+    token_hash: tokenHash,
+    role: "member",
+    invited_by: user.id,
+  });
+
+  if (error) fail(`/groups/${groupId.data}`, "No pudimos crear la invitación");
+  redirect(`/groups/${groupId.data}?invite=${encodeURIComponent(token)}`);
+}
+
+const sharedExpenseSchema = z.object({
+  groupId: z.uuid(),
+  title: z.string().trim().min(2).max(120),
+  amount: z.coerce.number().positive(),
+  category: z.enum(["food", "home", "transport", "entertainment", "other"]),
+  paidBy: z.uuid(),
+  memberIds: z.string().transform((value, context) => {
+    try {
+      return z.array(z.uuid()).min(1).parse(JSON.parse(value));
+    } catch {
+      context.addIssue({ code: "custom", message: "Integrantes inválidos" });
+      return z.NEVER;
+    }
+  }),
+});
+
+export async function createSharedExpense(formData: FormData) {
+  const parsed = sharedExpenseSchema.safeParse(Object.fromEntries(formData));
+  const groupId = String(formData.get("groupId") ?? "");
+  if (!parsed.success) fail(`/groups/${groupId}`, "Revisa los datos del gasto");
+
+  const amountCents = Math.round(parsed.data.amount * 100);
+  const base = Math.floor(amountCents / parsed.data.memberIds.length);
+  const remainder = amountCents % parsed.data.memberIds.length;
+  const splits = parsed.data.memberIds.map((userId, index) => ({
+    user_id: userId,
+    amount_cents: base + (index < remainder ? 1 : 0),
+  }));
+
+  const { supabase } = await requireUser();
+  const { error } = await supabase.rpc("create_shared_expense", {
+    p_group_id: parsed.data.groupId,
+    p_title: parsed.data.title,
+    p_category: parsed.data.category,
+    p_amount_cents: amountCents,
+    p_paid_by: parsed.data.paidBy,
+    p_splits: splits,
+    p_client_id: crypto.randomUUID(),
+  });
+
+  if (error) fail(`/groups/${parsed.data.groupId}`, "No pudimos guardar el gasto compartido");
+  redirect(`/groups/${parsed.data.groupId}?success=expense`);
+}
+
+const settlementSchema = z.object({
+  groupId: z.uuid(),
+  payerId: z.uuid(),
+  payeeId: z.uuid(),
+  amount: z.coerce.number().positive(),
+  note: z.string().trim().max(300).optional(),
+});
+
+export async function createSettlement(formData: FormData) {
+  const parsed = settlementSchema.safeParse(Object.fromEntries(formData));
+  const groupId = String(formData.get("groupId") ?? "");
+  if (!parsed.success || parsed.data.payerId === parsed.data.payeeId) {
+    fail(`/groups/${groupId}`, "La liquidación necesita dos integrantes distintos");
+  }
+
+  const { supabase, user } = await requireUser();
+  const { error } = await supabase.from("settlements").insert({
+    group_id: parsed.data.groupId,
+    payer_id: parsed.data.payerId,
+    payee_id: parsed.data.payeeId,
+    amount_cents: Math.round(parsed.data.amount * 100),
+    currency: "MXN",
+    note: parsed.data.note || null,
+    created_by: user.id,
+  });
+
+  if (error) fail(`/groups/${parsed.data.groupId}`, "No pudimos registrar la liquidación");
+  redirect(`/groups/${parsed.data.groupId}?success=settlement`);
+}
+
+export async function acceptInvitation(formData: FormData) {
+  const token = z.string().min(20).safeParse(formData.get("token"));
+  if (!token.success) fail("/groups", "El enlace de invitación no es válido");
+
+  const { supabase } = await requireUser();
+  const { data, error } = await supabase.rpc("accept_group_invitation", { p_token: token.data });
+  if (error || !data) fail("/groups", "La invitación expiró o pertenece a otro correo");
+  redirect(`/groups/${data}?success=joined`);
+}

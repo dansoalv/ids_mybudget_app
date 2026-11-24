@@ -1,0 +1,2 @@
+-- Intentionally empty. Demo data lives in the application until a developer
+-- explicitly opts into seeding a local Supabase instance.

@@ -1,0 +1,135 @@
+import { notFound } from "next/navigation";
+import { Copy, HandCoins, ReceiptText, UserPlus, Users } from "lucide-react";
+
+import { AppHeader } from "@/components/app-header";
+import { createInvitation, createSettlement, createSharedExpense } from "@/app/groups/actions";
+import { requireUser } from "@/lib/auth";
+import { formatMoney } from "@/lib/money";
+
+export default async function GroupDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ invite?: string; error?: string; success?: string }>;
+}) {
+  const { id } = await params;
+  const query = await searchParams;
+  const { supabase, user } = await requireUser();
+  const [groupResult, membersResult, transactionsResult, balancesResult] = await Promise.all([
+    supabase.from("groups").select("id,name,kind,currency,owner_id").eq("id", id).single(),
+    supabase.from("group_members").select("user_id,role,joined_at").eq("group_id", id).order("joined_at"),
+    supabase.from("transactions").select("id,title,amount_cents,category,occurred_at,paid_by").eq("group_id", id).order("occurred_at", { ascending: false }).limit(20),
+    supabase.from("group_member_balances").select("user_id,balance_cents").eq("group_id", id),
+  ]);
+
+  if (groupResult.error || !groupResult.data) notFound();
+  const group = groupResult.data;
+  const members = membersResult.data ?? [];
+  const memberIds = members.map((member) => member.user_id);
+  const profilesResult = memberIds.length
+    ? await supabase.from("profiles").select("id,display_name").in("id", memberIds)
+    : { data: [] };
+  const names = new Map((profilesResult.data ?? []).map((profile) => [profile.id, profile.display_name]));
+  const currentRole = members.find((member) => member.user_id === user.id)?.role;
+  const canInvite = currentRole === "owner" || currentRole === "admin";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const invitationUrl = query.invite ? `${appUrl}/invite/${query.invite}` : null;
+
+  return (
+    <div className="min-h-screen bg-surface text-ink">
+      <AppHeader title={group.name} backHref="/groups" />
+      <main className="mx-auto max-w-6xl px-5 py-8 sm:px-8">
+        {(query.error || query.success) ? (
+          <div className={`mb-6 rounded-2xl px-5 py-4 text-sm font-bold ${query.error ? "bg-red-50 text-red-700" : "bg-aqua/25 text-brand"}`}>
+            {query.error ?? successMessage(query.success)}
+          </div>
+        ) : null}
+
+        <section className="grid gap-5 md:grid-cols-3">
+          <article className="rounded-[2rem] bg-brand p-6 text-white md:col-span-2">
+            <p className="text-sm font-bold text-white/55">Balance del grupo</p>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              {(balancesResult.data ?? []).map((balance) => {
+                const amount = balance.balance_cents ?? 0;
+                return (
+                  <div key={balance.user_id} className="rounded-2xl bg-white/8 p-4">
+                    <p className="text-sm font-bold">{names.get(balance.user_id ?? "") ?? "Integrante"}</p>
+                    <p className={`mt-1 text-xl font-extrabold ${amount >= 0 ? "text-aqua" : "text-cream"}`}>{amount >= 0 ? "+" : "−"}{formatMoney(Math.abs(amount))}</p>
+                    <p className="mt-1 text-xs text-white/45">{amount > 0 ? "Debe recibir" : amount < 0 ? "Debe pagar" : "Al corriente"}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </article>
+          <article className="rounded-[2rem] bg-white p-6 shadow-sm">
+            <span className="grid size-11 place-items-center rounded-2xl bg-cream text-accent"><Users className="size-5" /></span>
+            <h2 className="mt-4 font-extrabold">{members.length} integrantes</h2>
+            <div className="mt-4 space-y-3">
+              {members.map((member) => <div key={member.user_id} className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-full bg-aqua/30 text-xs font-extrabold text-brand">{(names.get(member.user_id) ?? "U").slice(0, 1)}</span><div><p className="text-sm font-bold">{names.get(member.user_id) ?? "Usuario"}</p><p className="text-xs capitalize text-slate-400">{member.role}</p></div></div>)}
+            </div>
+          </article>
+        </section>
+
+        <section className="mt-6 grid gap-6 lg:grid-cols-2">
+          <ActionCard icon={<ReceiptText className="size-5" />} title="Nuevo gasto compartido" subtitle="Se dividirá por igual entre todos.">
+            <form action={createSharedExpense} className="mt-5 grid gap-4 sm:grid-cols-2">
+              <input type="hidden" name="groupId" value={id} /><input type="hidden" name="memberIds" value={JSON.stringify(memberIds)} />
+              <Field label="Concepto" name="title" placeholder="Supermercado" />
+              <Field label="Cantidad" name="amount" type="number" placeholder="0.00" />
+              <label className="block"><span className="text-sm font-bold">Categoría</span><select name="category" className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4"><option value="food">Alimentos</option><option value="home">Hogar</option><option value="transport">Transporte</option><option value="entertainment">Ocio</option><option value="other">Otros</option></select></label>
+              <label className="block"><span className="text-sm font-bold">Pagó</span><select name="paidBy" defaultValue={user.id} className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4">{members.map((member) => <option key={member.user_id} value={member.user_id}>{names.get(member.user_id)}</option>)}</select></label>
+              <button className="min-h-12 rounded-2xl bg-accent px-5 font-extrabold text-white sm:col-span-2">Guardar gasto</button>
+            </form>
+          </ActionCard>
+
+          <ActionCard icon={<HandCoins className="size-5" />} title="Registrar liquidación" subtitle="Anota un pago realizado entre integrantes.">
+            <form action={createSettlement} className="mt-5 grid gap-4 sm:grid-cols-2">
+              <input type="hidden" name="groupId" value={id} />
+              <MemberSelect label="Pagó" name="payerId" members={members} names={names} currentUserId={user.id} />
+              <MemberSelect label="Recibió" name="payeeId" members={members} names={names} />
+              <Field label="Cantidad" name="amount" type="number" placeholder="0.00" />
+              <Field label="Nota" name="note" placeholder="Transferencia" required={false} />
+              <button className="min-h-12 rounded-2xl bg-brand px-5 font-extrabold text-white sm:col-span-2">Registrar pago</button>
+            </form>
+          </ActionCard>
+        </section>
+
+        {canInvite ? (
+          <section className="mt-6 rounded-[2rem] bg-cream p-6">
+            <div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-2xl bg-white text-accent"><UserPlus className="size-5" /></span><div><h2 className="font-extrabold">Invitar integrante</h2><p className="text-sm text-slate-500">El enlace vence en 7 días.</p></div></div>
+            <form action={createInvitation} className="mt-5 flex flex-col gap-3 sm:flex-row"><input type="hidden" name="groupId" value={id} /><input name="email" type="email" placeholder="Correo específico (opcional)" className="min-h-12 min-w-0 flex-1 rounded-2xl border border-white bg-white px-4" /><button className="min-h-12 rounded-2xl bg-accent px-5 font-extrabold text-white">Crear enlace</button></form>
+            {invitationUrl ? <div className="mt-4 flex items-center gap-3 rounded-2xl bg-white p-4"><Copy className="size-5 shrink-0 text-teal" /><p className="min-w-0 flex-1 break-all text-sm font-semibold">{invitationUrl}</p></div> : null}
+          </section>
+        ) : null}
+
+        <section className="mt-6 rounded-[2rem] bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-extrabold">Actividad reciente</h2>
+          <div className="mt-4 divide-y divide-slate-100">
+            {(transactionsResult.data ?? []).map((transaction) => <div key={transaction.id} className="flex items-center gap-4 py-4"><span className="grid size-10 place-items-center rounded-2xl bg-aqua/20 text-brand"><ReceiptText className="size-5" /></span><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{transaction.title}</p><p className="text-xs text-slate-500">Pagó {names.get(transaction.paid_by ?? "") ?? "Integrante"}</p></div><p className="font-extrabold">{formatMoney(transaction.amount_cents)}</p></div>)}
+            {(transactionsResult.data ?? []).length === 0 ? <p className="py-8 text-center text-sm font-semibold text-slate-400">Aún no hay gastos en este grupo.</p> : null}
+          </div>
+        </section>
+      </main>
+    </div>
+  );
+}
+
+function successMessage(value?: string) {
+  if (value === "expense") return "Gasto compartido registrado.";
+  if (value === "settlement") return "Liquidación registrada.";
+  if (value === "joined") return "Te uniste al grupo.";
+  return "Cambios guardados.";
+}
+
+function ActionCard({ icon, title, subtitle, children }: { icon: React.ReactNode; title: string; subtitle: string; children: React.ReactNode }) {
+  return <article className="rounded-[2rem] bg-white p-6 shadow-sm"><div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-2xl bg-aqua/25 text-brand">{icon}</span><div><h2 className="font-extrabold">{title}</h2><p className="text-sm text-slate-500">{subtitle}</p></div></div>{children}</article>;
+}
+
+function Field({ label, name, type = "text", placeholder, required = true }: { label: string; name: string; type?: string; placeholder: string; required?: boolean }) {
+  return <label className="block"><span className="text-sm font-bold">{label}</span><input name={name} type={type} required={required} min={type === "number" ? "0.01" : undefined} step={type === "number" ? "0.01" : undefined} placeholder={placeholder} className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 px-4 outline-none focus:border-teal" /></label>;
+}
+
+function MemberSelect({ label, name, members, names, currentUserId }: { label: string; name: string; members: { user_id: string }[]; names: Map<string, string>; currentUserId?: string }) {
+  return <label className="block"><span className="text-sm font-bold">{label}</span><select name={name} defaultValue={currentUserId} className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4">{members.map((member) => <option key={member.user_id} value={member.user_id}>{names.get(member.user_id)}</option>)}</select></label>;
+}
