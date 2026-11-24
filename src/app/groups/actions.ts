@@ -32,7 +32,10 @@ export async function createGroup(formData: FormData) {
       hint: error.hint,
       message: error.message,
     });
-    fail("/groups", "No pudimos crear el grupo. Intenta nuevamente.");
+    const message = error.message.includes("FREE_GROUP_LIMIT")
+      ? "Tu plan Gratis incluye 1 grupo. Consulta los otros planes en tu perfil."
+      : "No pudimos crear el grupo. Intenta nuevamente.";
+    fail("/groups", message);
   }
 
   redirect(`/groups/${groupId}`);

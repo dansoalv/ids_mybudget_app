@@ -33,6 +33,26 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;
         Relationships: [];
       };
+      subscriptions: {
+        Row: {
+          user_id: string;
+          plan: Database["public"]["Enums"]["subscription_plan"];
+          status: Database["public"]["Enums"]["subscription_status"];
+          current_period_ends_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          plan?: Database["public"]["Enums"]["subscription_plan"];
+          status?: Database["public"]["Enums"]["subscription_status"];
+          current_period_ends_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["subscriptions"]["Insert"]>;
+        Relationships: [];
+      };
       groups: {
         Row: {
           id: string;
@@ -220,6 +240,8 @@ export type Database = {
       group_role: "owner" | "admin" | "member";
       invitation_status: "pending" | "accepted" | "revoked" | "expired";
       transaction_kind: "income" | "expense";
+      subscription_plan: "free" | "plus" | "family";
+      subscription_status: "active" | "past_due" | "canceled";
     };
     CompositeTypes: Record<never, never>;
   };

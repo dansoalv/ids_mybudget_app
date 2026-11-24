@@ -45,4 +45,19 @@ describe("createGroup", () => {
     expect(insertedGroup.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
     expect(redirect).toHaveBeenCalledWith(`/groups/${insertedGroup.id}`);
   });
+
+  it("explica el límite cuando una cuenta Gratis ya tiene un grupo", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    insert.mockResolvedValue({
+      error: { code: "P0001", details: null, hint: null, message: "FREE_GROUP_LIMIT" },
+    });
+    const formData = new FormData();
+    formData.set("name", "Viaje");
+    formData.set("kind", "trip");
+
+    await expect(createGroup(formData)).rejects.toThrow("REDIRECT:/groups?error=");
+    expect(redirect).toHaveBeenCalledWith(
+      "/groups?error=Tu%20plan%20Gratis%20incluye%201%20grupo.%20Consulta%20los%20otros%20planes%20en%20tu%20perfil.",
+    );
+  });
 });

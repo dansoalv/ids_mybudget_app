@@ -11,12 +11,25 @@ import { createGroup } from "./actions";
 export default async function GroupsPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const { error } = await searchParams;
   const configured = isSupabaseConfigured();
-  const groups = configured
-    ? ((await (await requireUser()).supabase.from("groups").select("id,name,kind").is("archived_at", null).order("created_at")).data ?? [])
-    : [
-        { id: "demo-casa", name: "Casa", kind: "household" },
-        { id: "demo-viaje", name: "Viaje Oaxaca", kind: "trip" },
-      ];
+  let groups: { id: string; name: string; kind: string; owner_id?: string }[];
+  let isAtFreeGroupLimit = false;
+
+  if (configured) {
+    const { supabase, user } = await requireUser();
+    const [groupsResult, subscriptionResult] = await Promise.all([
+      supabase.from("groups").select("id,name,kind,owner_id").is("archived_at", null).order("created_at"),
+      supabase.from("subscriptions").select("plan,status").eq("user_id", user.id).maybeSingle(),
+    ]);
+    groups = groupsResult.data ?? [];
+    const currentPlan = subscriptionResult.data?.status === "active" ? subscriptionResult.data.plan : "free";
+    const ownedGroups = groups.filter((group) => group.owner_id === user.id).length;
+    isAtFreeGroupLimit = currentPlan === "free" && ownedGroups >= 1;
+  } else {
+    groups = [
+      { id: "demo-casa", name: "Casa", kind: "household" },
+      { id: "demo-viaje", name: "Viaje Oaxaca", kind: "trip" },
+    ];
+  }
 
   return (
     <div className="min-h-dvh bg-surface pb-[calc(6.5rem+env(safe-area-inset-bottom))] text-ink lg:pb-12">
@@ -43,7 +56,8 @@ export default async function GroupsPage({ searchParams }: { searchParams: Promi
             <label className="block"><span className="text-sm font-bold">Nombre</span><input name="name" required minLength={2} placeholder="Ej. Casa" className="mt-2 min-h-13 w-full rounded-2xl border border-slate-200 px-4 outline-none focus:border-teal" /></label>
             <label className="block"><span className="text-sm font-bold">Tipo</span><select name="kind" className="mt-2 min-h-13 w-full rounded-2xl border border-slate-200 bg-white px-4"><option value="household">Hogar o pareja</option><option value="trip">Viaje</option><option value="friends">Amigos</option><option value="other">Otro</option></select></label>
             {error ? <p className="text-sm font-semibold text-red-700">{error}</p> : null}
-            <button disabled={!configured} className="min-h-13 w-full rounded-2xl bg-brand px-5 font-extrabold text-white disabled:opacity-40">Crear grupo</button>
+            {isAtFreeGroupLimit ? <p className="rounded-2xl bg-cream p-4 text-sm font-semibold leading-6 text-brand">Ya utilizaste el grupo incluido en Gratis. <Link href="/profile#subscription" className="underline underline-offset-4">Compara los planes</Link>.</p> : null}
+            <button disabled={!configured || isAtFreeGroupLimit} className="min-h-13 w-full rounded-2xl bg-brand px-5 font-extrabold text-white disabled:opacity-40">Crear grupo</button>
           </form>
         </aside>
       </main>

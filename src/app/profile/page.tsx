@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import {
   BadgeCheck,
   CalendarDays,
+  Check,
   Coins,
+  Crown,
+  Gem,
   Languages,
   LogOut,
   Mail,
@@ -27,6 +30,8 @@ type ProfileData = {
   locale: string;
   timezone: string;
   createdAt: string;
+  subscriptionPlan: "free" | "plus" | "family";
+  ownedGroupCount: number;
   mode: "demo" | "live";
 };
 
@@ -98,6 +103,8 @@ export default async function ProfilePage() {
             )}
           </aside>
         </section>
+
+        <SubscriptionSection plan={profile.subscriptionPlan} ownedGroupCount={profile.ownedGroupCount} />
       </main>
       <MobileNavigation active="profile" />
     </div>
@@ -113,30 +120,116 @@ async function readProfile(): Promise<ProfileData> {
       locale: "es-MX",
       timezone: "America/Mexico_City",
       createdAt: "2026-11-01T12:00:00.000Z",
+      subscriptionPlan: "free",
+      ownedGroupCount: 1,
       mode: "demo",
     };
   }
 
   const { supabase, user } = await requireUser();
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("display_name,default_currency,locale,timezone,created_at")
-    .eq("id", user.id)
-    .single();
+  const [profileResult, subscriptionResult, groupsResult] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("display_name,default_currency,locale,timezone,created_at")
+      .eq("id", user.id)
+      .single(),
+    supabase.from("subscriptions").select("plan,status").eq("user_id", user.id).maybeSingle(),
+    supabase.from("groups").select("id", { count: "exact", head: true }).eq("owner_id", user.id).is("archived_at", null),
+  ]);
 
-  if (error || !data) {
+  if (profileResult.error || !profileResult.data) {
     throw new Error("No se pudo consultar el perfil");
   }
 
+  const subscriptionPlan = subscriptionResult.data?.status === "active"
+    ? subscriptionResult.data.plan
+    : "free";
+
   return {
-    displayName: data.display_name,
+    displayName: profileResult.data.display_name,
     email: user.email ?? "Correo no disponible",
-    currency: data.default_currency,
-    locale: data.locale,
-    timezone: data.timezone,
-    createdAt: data.created_at,
+    currency: profileResult.data.default_currency,
+    locale: profileResult.data.locale,
+    timezone: profileResult.data.timezone,
+    createdAt: profileResult.data.created_at,
+    subscriptionPlan,
+    ownedGroupCount: groupsResult.count ?? 0,
     mode: "live",
   };
+}
+
+const planDetails = [
+  {
+    id: "free" as const,
+    name: "Gratis",
+    description: "Lo esencial para ordenar tus finanzas y comenzar a compartir.",
+    icon: BadgeCheck,
+    features: ["Acceso seguro y perfil personal", "Movimientos personales", "1 grupo compartido", "Divisiones y liquidaciones básicas"],
+  },
+  {
+    id: "plus" as const,
+    name: "Plus",
+    description: "Más control para quienes administran varios espacios y objetivos.",
+    icon: Crown,
+    features: ["Todo lo incluido en Gratis", "Grupos ilimitados", "Presupuestos configurables", "Movimientos recurrentes y recordatorios", "Exportación de información"],
+  },
+  {
+    id: "family" as const,
+    name: "Familia",
+    description: "Organización avanzada para hogares y equipos que comparten más.",
+    icon: Gem,
+    features: ["Todo lo incluido en Plus", "Planes y metas compartidas", "Roles y permisos avanzados", "Historial familiar ampliado", "Soporte prioritario"],
+  },
+];
+
+function SubscriptionSection({ plan, ownedGroupCount }: { plan: ProfileData["subscriptionPlan"]; ownedGroupCount: number }) {
+  const freeUsage = Math.min(ownedGroupCount, 1);
+
+  return (
+    <section id="subscription" className="scroll-mt-28 pt-7" aria-labelledby="subscription-title">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-sm font-extrabold uppercase tracking-[0.14em] text-teal">Suscripción</p>
+          <h2 id="subscription-title" className="mt-2 text-3xl font-extrabold tracking-[-0.04em]">Un plan para cada etapa</h2>
+          <p className="mt-2 max-w-2xl leading-7 text-slate-500">Todas las cuentas comienzan en Gratis. Plus y Familia estarán disponibles en una siguiente etapa.</p>
+        </div>
+        <span className="inline-flex items-center gap-2 rounded-full bg-ink px-4 py-2 text-sm font-extrabold text-white">
+          Plan actual: {planDetails.find((item) => item.id === plan)?.name ?? "Gratis"}
+        </span>
+      </div>
+
+      {plan === "free" ? (
+        <div className="mt-5 rounded-[1.75rem] bg-cream p-5 sm:flex sm:items-center sm:justify-between sm:gap-6">
+          <div><p className="font-extrabold">Uso de grupos</p><p className="mt-1 text-sm text-slate-600">Tu plan incluye la creación de un grupo compartido.</p></div>
+          <div className="mt-4 min-w-52 sm:mt-0">
+            <div className="flex items-center justify-between text-sm font-bold"><span>{freeUsage} de 1 utilizado</span><span>{freeUsage * 100}%</span></div>
+            <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-white"><div className="h-full rounded-full bg-brand" style={{ width: `${freeUsage * 100}%` }} /></div>
+          </div>
+        </div>
+      ) : null}
+
+      <div className="mt-5 grid gap-5 lg:grid-cols-3">
+        {planDetails.map((item) => {
+          const Icon = item.icon;
+          const isCurrent = item.id === plan;
+          return (
+            <article key={item.id} className={`relative rounded-[2rem] border p-6 shadow-sm ${isCurrent ? "border-brand bg-white ring-4 ring-brand/8" : "border-slate-200/70 bg-white"}`}>
+              {isCurrent ? <span className="absolute right-5 top-5 rounded-full bg-brand px-3 py-1 text-xs font-extrabold text-white">Plan actual</span> : null}
+              <span className={`grid size-12 place-items-center rounded-2xl ${item.id === "free" ? "bg-aqua/25 text-brand" : item.id === "plus" ? "bg-cream text-accent" : "bg-ink text-aqua"}`}><Icon className="size-6" /></span>
+              <h3 className="mt-5 text-2xl font-extrabold">{item.name}</h3>
+              <p className="mt-2 min-h-16 text-sm leading-6 text-slate-500">{item.description}</p>
+              <ul className="mt-5 space-y-3">
+                {item.features.map((feature) => <li key={feature} className="flex gap-3 text-sm font-semibold text-slate-600"><Check className="mt-0.5 size-4 shrink-0 text-teal" />{feature}</li>)}
+              </ul>
+              <div className={`mt-6 flex min-h-12 items-center justify-center rounded-2xl px-4 text-sm font-extrabold ${isCurrent ? "bg-slate-100 text-slate-500" : "bg-ink text-white"}`}>
+                {isCurrent ? "Tu plan actual" : "Próximamente"}
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
 }
 
 function ProfileRow({ icon: Icon, label, value }: { icon: typeof Coins; label: string; value: string }) {
