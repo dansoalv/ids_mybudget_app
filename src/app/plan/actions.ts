@@ -39,7 +39,7 @@ export async function saveMonthlyBudget(formData: FormData) {
   const parsed = budgetSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) fail("Revisa la categoría y el importe del presupuesto");
 
-  const { supabase, user } = await requirePlus();
+  const { supabase, user } = await requireUser();
   const { error } = await supabase.from("monthly_budgets").upsert({
     user_id: user.id,
     month: parsed.data.month,
@@ -49,6 +49,23 @@ export async function saveMonthlyBudget(formData: FormData) {
 
   if (error) fail("No pudimos guardar el presupuesto");
   redirect("/plan?success=budget#plus-tools");
+}
+
+export async function deleteMonthlyBudget(formData: FormData) {
+  const id = z.uuid().safeParse(formData.get("id"));
+  if (!id.success) fail("Presupuesto inválido");
+
+  const { supabase, user } = await requireUser();
+  const { data, error } = await supabase
+    .from("monthly_budgets")
+    .delete()
+    .eq("id", id.data)
+    .eq("user_id", user.id)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !data) fail("No pudimos eliminar el límite");
+  redirect("/plan?success=budget-deleted#plus-tools");
 }
 
 export async function createRecurringTransaction(formData: FormData) {

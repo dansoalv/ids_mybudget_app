@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
-import { Copy, HandCoins, ReceiptText, UserPlus, Users } from "lucide-react";
+import { Copy, HandCoins, Pencil, ReceiptText, UserPlus, Users } from "lucide-react";
 
 import { AppHeader } from "@/components/app-header";
+import { ConfirmDeleteButton } from "@/components/confirm-delete-button";
 import { MobileNavigation } from "@/components/mobile-navigation";
-import { createInvitation, createSettlement, createSharedExpense } from "@/app/groups/actions";
+import { createInvitation, createSettlement, createSharedExpense, deleteSettlement, deleteSharedExpense, updateSettlement, updateSharedExpense } from "@/app/groups/actions";
 import { getAppUrl } from "@/lib/app-url";
 import { requireUser } from "@/lib/auth";
 import { formatMoney } from "@/lib/money";
@@ -18,11 +19,12 @@ export default async function GroupDetailPage({
   const { id } = await params;
   const query = await searchParams;
   const { supabase, user } = await requireUser();
-  const [groupResult, membersResult, transactionsResult, balancesResult] = await Promise.all([
+  const [groupResult, membersResult, transactionsResult, balancesResult, settlementsResult] = await Promise.all([
     supabase.from("groups").select("id,name,kind,currency,owner_id").eq("id", id).single(),
     supabase.from("group_members").select("user_id,role,joined_at").eq("group_id", id).order("joined_at"),
-    supabase.from("transactions").select("id,title,amount_cents,category,occurred_at,paid_by").eq("group_id", id).order("occurred_at", { ascending: false }).limit(20),
+    supabase.from("transactions").select("id,title,amount_cents,category,occurred_at,paid_by,created_by").eq("group_id", id).order("occurred_at", { ascending: false }).limit(20),
     supabase.from("group_member_balances").select("user_id,balance_cents").eq("group_id", id),
+    supabase.from("settlements").select("id,payer_id,payee_id,amount_cents,note,settled_at,created_by").eq("group_id", id).order("settled_at", { ascending: false }).limit(20),
   ]);
 
   if (groupResult.error || !groupResult.data) notFound();
@@ -107,8 +109,57 @@ export default async function GroupDetailPage({
         <section className="mt-6 rounded-[2rem] bg-white p-6 shadow-sm">
           <h2 className="text-lg font-extrabold">Actividad reciente</h2>
           <div className="mt-4 divide-y divide-slate-100">
-            {(transactionsResult.data ?? []).map((transaction) => <div key={transaction.id} className="flex items-center gap-4 py-4"><span className="grid size-10 place-items-center rounded-2xl bg-aqua/20 text-brand"><ReceiptText className="size-5" /></span><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{transaction.title}</p><p className="text-xs text-slate-500">Pagó {names.get(transaction.paid_by ?? "") ?? "Integrante"}</p></div><p className="font-extrabold">{formatMoney(transaction.amount_cents)}</p></div>)}
+            {(transactionsResult.data ?? []).map((transaction) => {
+              const canManage = transaction.created_by === user.id || currentRole === "owner" || currentRole === "admin";
+              return (
+                <div key={transaction.id} className="py-4">
+                  <div className="flex items-center gap-4"><span className="grid size-10 place-items-center rounded-2xl bg-aqua/20 text-brand"><ReceiptText className="size-5" /></span><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{transaction.title}</p><p className="text-xs text-slate-500">Pagó {names.get(transaction.paid_by ?? "") ?? "Integrante"}</p></div><p className="font-extrabold">{formatMoney(transaction.amount_cents)}</p></div>
+                  {canManage ? (
+                    <details className="mt-3 rounded-2xl bg-slate-50">
+                      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-center gap-2 text-sm font-extrabold"><Pencil className="size-4" />Editar gasto</summary>
+                      <div className="border-t border-slate-200 p-4">
+                        <form action={updateSharedExpense} className="grid gap-3 sm:grid-cols-2">
+                          <input type="hidden" name="groupId" value={id} />
+                          <input type="hidden" name="transactionId" value={transaction.id} />
+                          <input type="hidden" name="memberIds" value={JSON.stringify(memberIds)} />
+                          <label className="block sm:col-span-2"><span className="text-sm font-bold">Concepto</span><input name="title" defaultValue={transaction.title} required minLength={2} className="mt-2 min-h-12 w-full rounded-xl border border-slate-200 bg-white px-3" /></label>
+                          <label className="block"><span className="text-sm font-bold">Importe</span><input name="amount" type="number" inputMode="decimal" min="0.01" step="0.01" defaultValue={(transaction.amount_cents / 100).toFixed(2)} required className="mt-2 min-h-12 w-full rounded-xl border border-slate-200 bg-white px-3" /></label>
+                          <label className="block"><span className="text-sm font-bold">Categoría</span><select name="category" defaultValue={transaction.category} className="mt-2 min-h-12 w-full rounded-xl border border-slate-200 bg-white px-3"><option value="food">Alimentos</option><option value="home">Hogar</option><option value="transport">Transporte</option><option value="entertainment">Ocio</option><option value="other">Otros</option></select></label>
+                          <MemberSelect label="Pagó" name="paidBy" members={members} names={names} currentUserId={transaction.paid_by ?? undefined} />
+                          <label className="block"><span className="text-sm font-bold">Fecha</span><input name="occurredOn" type="date" defaultValue={transaction.occurred_at.slice(0, 10)} required className="mt-2 min-h-12 w-full rounded-xl border border-slate-200 bg-white px-3" /></label>
+                          <button className="min-h-12 rounded-xl bg-gold px-4 font-extrabold text-ink sm:col-span-2">Guardar cambios</button>
+                        </form>
+                        <form action={deleteSharedExpense} className="mt-4 border-t border-slate-200 pt-4">
+                          <input type="hidden" name="groupId" value={id} />
+                          <input type="hidden" name="transactionId" value={transaction.id} />
+                          <ConfirmDeleteButton message={`¿Eliminar “${transaction.title}” del grupo? También se recalcularán los saldos.`} label="Eliminar gasto" className="w-full" />
+                        </form>
+                      </div>
+                    </details>
+                  ) : null}
+                </div>
+              );
+            })}
             {(transactionsResult.data ?? []).length === 0 ? <p className="py-8 text-center text-sm font-semibold text-slate-400">Aún no hay gastos en este grupo.</p> : null}
+          </div>
+        </section>
+
+        <section className="mt-6 rounded-[2rem] bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-extrabold">Liquidaciones recientes</h2>
+          <p className="mt-1 text-sm text-slate-500">Pagos registrados entre integrantes del grupo.</p>
+          <div className="mt-4 divide-y divide-slate-100">
+            {(settlementsResult.data ?? []).map((settlement) => {
+              const canManage = settlement.created_by === user.id || currentRole === "owner" || currentRole === "admin";
+              const payer = names.get(settlement.payer_id) ?? "Integrante";
+              const payee = names.get(settlement.payee_id) ?? "Integrante";
+              return (
+                <div key={settlement.id} className="py-4">
+                  <div className="flex items-center gap-4"><span className="grid size-10 place-items-center rounded-2xl bg-cream text-brand"><HandCoins className="size-5" /></span><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{payer} pagó a {payee}</p><p className="truncate text-xs text-slate-500">{settlement.note || "Sin nota"}</p></div><p className="font-extrabold">{formatMoney(settlement.amount_cents)}</p></div>
+                  {canManage ? <details className="mt-3 rounded-2xl bg-slate-50"><summary className="flex min-h-11 cursor-pointer list-none items-center justify-center gap-2 text-sm font-extrabold"><Pencil className="size-4" />Editar liquidación</summary><div className="border-t border-slate-200 p-4"><form action={updateSettlement} className="grid gap-3 sm:grid-cols-2"><input type="hidden" name="groupId" value={id} /><input type="hidden" name="settlementId" value={settlement.id} /><label className="block"><span className="text-sm font-bold">Importe</span><input name="amount" type="number" inputMode="decimal" min="0.01" step="0.01" defaultValue={(settlement.amount_cents / 100).toFixed(2)} required className="mt-2 min-h-12 w-full rounded-xl border border-slate-200 bg-white px-3" /></label><label className="block"><span className="text-sm font-bold">Fecha</span><input name="settledOn" type="date" defaultValue={settlement.settled_at.slice(0, 10)} required className="mt-2 min-h-12 w-full rounded-xl border border-slate-200 bg-white px-3" /></label><label className="block sm:col-span-2"><span className="text-sm font-bold">Nota</span><input name="note" defaultValue={settlement.note ?? ""} maxLength={300} className="mt-2 min-h-12 w-full rounded-xl border border-slate-200 bg-white px-3" /></label><button className="min-h-12 rounded-xl bg-gold px-4 font-extrabold text-ink sm:col-span-2">Guardar cambios</button></form><form action={deleteSettlement} className="mt-4 border-t border-slate-200 pt-4"><input type="hidden" name="groupId" value={id} /><input type="hidden" name="settlementId" value={settlement.id} /><ConfirmDeleteButton message={`¿Eliminar la liquidación de ${payer} a ${payee}? Los balances se recalcularán.`} label="Eliminar liquidación" className="w-full" /></form></div></details> : null}
+                </div>
+              );
+            })}
+            {(settlementsResult.data ?? []).length === 0 ? <p className="py-8 text-center text-sm font-semibold text-slate-400">Aún no hay liquidaciones en este grupo.</p> : null}
           </div>
         </section>
       </main>
@@ -119,7 +170,11 @@ export default async function GroupDetailPage({
 
 function successMessage(value?: string) {
   if (value === "expense") return "Gasto compartido registrado.";
+  if (value === "expense-updated") return "Gasto compartido actualizado.";
+  if (value === "expense-deleted") return "Gasto compartido eliminado y saldos recalculados.";
   if (value === "settlement") return "Liquidación registrada.";
+  if (value === "settlement-updated") return "Liquidación actualizada y balances recalculados.";
+  if (value === "settlement-deleted") return "Liquidación eliminada y balances recalculados.";
   if (value === "joined") return "Te uniste al grupo.";
   return "Cambios guardados.";
 }

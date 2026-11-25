@@ -53,7 +53,7 @@ export default async function PlanPage({ searchParams }: PlanPageProps) {
             <div>
               <span className="inline-flex rounded-full bg-white/50 px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.14em] text-ink">Vista informativa · {mode === "live" ? "Datos sincronizados" : "Demostración"}</span>
               <h2 className="mt-5 max-w-2xl text-3xl font-extrabold leading-tight tracking-[-0.04em] sm:text-4xl">Una referencia sencilla para darle intención a tu dinero.</h2>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-ink/65">Distribuimos tus ingresos con la guía 50/30/20. No modifica tus movimientos ni establece límites todavía.</p>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-ink/65">Distribuimos tus ingresos con la guía 50/30/20. Usa la referencia y define límites propios sin modificar tus movimientos.</p>
             </div>
             <div className="min-w-60 rounded-3xl bg-white/50 p-5">
               <p className="text-sm font-bold text-ink/55">Disponible del periodo</p>
@@ -137,26 +137,23 @@ async function readPlusData(): Promise<{
 
   const { supabase, user } = await requireUser();
   const access = await readBillingAccess(supabase, user.id);
-  if (!access.hasPlus) {
-    return { hasPlus: false, plan: "free", month, budgets: [], recurringTransactions: [] };
-  }
+  const budgetsResult = await supabase.from("monthly_budgets").select("*").eq("month", month).order("category");
+  if (budgetsResult.error) throw new Error("No se pudieron consultar los presupuestos");
 
-  await supabase.rpc("materialize_due_recurring_transactions");
-  const [budgetsResult, recurringResult] = await Promise.all([
-    supabase.from("monthly_budgets").select("*").eq("month", month).order("category"),
-    supabase.from("recurring_transactions").select("*").eq("active", true).order("next_run_on"),
-  ]);
-
-  if (budgetsResult.error || recurringResult.error) {
-    throw new Error("No se pudieron consultar las herramientas Plus");
+  let recurringTransactions: RecurringTransaction[] = [];
+  if (access.hasPlus) {
+    await supabase.rpc("materialize_due_recurring_transactions");
+    const recurringResult = await supabase.from("recurring_transactions").select("*").eq("active", true).order("next_run_on");
+    if (recurringResult.error) throw new Error("No se pudieron consultar las automatizaciones");
+    recurringTransactions = recurringResult.data ?? [];
   }
 
   return {
-    hasPlus: true,
+    hasPlus: access.hasPlus,
     plan: access.plan,
     month,
     budgets: budgetsResult.data ?? [],
-    recurringTransactions: recurringResult.data ?? [],
+    recurringTransactions,
   };
 }
 

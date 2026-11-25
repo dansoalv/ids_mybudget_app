@@ -334,6 +334,19 @@ export type Database = {
         };
         Returns: string;
       };
+      update_shared_expense: {
+        Args: {
+          p_transaction_id: string;
+          p_group_id: string;
+          p_title: string;
+          p_category: string;
+          p_amount_cents: number;
+          p_paid_by: string;
+          p_splits: Json;
+          p_occurred_at: string;
+        };
+        Returns: string;
+      };
       materialize_due_recurring_transactions: {
         Args: Record<PropertyKey, never>;
         Returns: number;

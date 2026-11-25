@@ -83,12 +83,8 @@ export async function createSharedExpense(formData: FormData) {
   if (!parsed.success) fail(`/groups/${groupId}`, "Revisa los datos del gasto");
 
   const amountCents = Math.round(parsed.data.amount * 100);
-  const base = Math.floor(amountCents / parsed.data.memberIds.length);
-  const remainder = amountCents % parsed.data.memberIds.length;
-  const splits = parsed.data.memberIds.map((userId, index) => ({
-    user_id: userId,
-    amount_cents: base + (index < remainder ? 1 : 0),
-  }));
+  if (amountCents < parsed.data.memberIds.length) fail(`/groups/${groupId}`, "El importe es demasiado pequeño para dividirlo entre todos");
+  const splits = equalSplits(amountCents, parsed.data.memberIds);
 
   const { supabase } = await requireUser();
   const { error } = await supabase.rpc("create_shared_expense", {
@@ -103,6 +99,52 @@ export async function createSharedExpense(formData: FormData) {
 
   if (error) fail(`/groups/${parsed.data.groupId}`, "No pudimos guardar el gasto compartido");
   redirect(`/groups/${parsed.data.groupId}?success=expense`);
+}
+
+const sharedExpenseUpdateSchema = sharedExpenseSchema.extend({
+  transactionId: z.uuid(),
+  occurredOn: z.iso.date(),
+});
+
+export async function updateSharedExpense(formData: FormData) {
+  const parsed = sharedExpenseUpdateSchema.safeParse(Object.fromEntries(formData));
+  const groupId = String(formData.get("groupId") ?? "");
+  if (!parsed.success) fail(`/groups/${groupId}`, "Revisa los datos del gasto");
+
+  const amountCents = Math.round(parsed.data.amount * 100);
+  if (amountCents < parsed.data.memberIds.length) fail(`/groups/${groupId}`, "El importe es demasiado pequeño para dividirlo entre todos");
+  const { supabase } = await requireUser();
+  const { data, error } = await supabase.rpc("update_shared_expense", {
+    p_transaction_id: parsed.data.transactionId,
+    p_group_id: parsed.data.groupId,
+    p_title: parsed.data.title,
+    p_category: parsed.data.category,
+    p_amount_cents: amountCents,
+    p_paid_by: parsed.data.paidBy,
+    p_splits: equalSplits(amountCents, parsed.data.memberIds),
+    p_occurred_at: `${parsed.data.occurredOn}T12:00:00.000Z`,
+  });
+
+  if (error || !data) fail(`/groups/${parsed.data.groupId}`, "No pudimos actualizar el gasto compartido");
+  redirect(`/groups/${parsed.data.groupId}?success=expense-updated`);
+}
+
+export async function deleteSharedExpense(formData: FormData) {
+  const parsed = z.object({ groupId: z.uuid(), transactionId: z.uuid() }).safeParse(Object.fromEntries(formData));
+  const groupId = String(formData.get("groupId") ?? "");
+  if (!parsed.success) fail(`/groups/${groupId}`, "Gasto inválido");
+
+  const { supabase } = await requireUser();
+  const { data, error } = await supabase
+    .from("transactions")
+    .delete()
+    .eq("id", parsed.data.transactionId)
+    .eq("group_id", parsed.data.groupId)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !data) fail(`/groups/${parsed.data.groupId}`, "No pudimos eliminar el gasto compartido");
+  redirect(`/groups/${parsed.data.groupId}?success=expense-deleted`);
 }
 
 const settlementSchema = z.object({
@@ -135,6 +177,54 @@ export async function createSettlement(formData: FormData) {
   redirect(`/groups/${parsed.data.groupId}?success=settlement`);
 }
 
+const settlementUpdateSchema = z.object({
+  groupId: z.uuid(),
+  settlementId: z.uuid(),
+  amount: z.coerce.number().positive(),
+  note: z.string().trim().max(300).optional(),
+  settledOn: z.iso.date(),
+});
+
+export async function updateSettlement(formData: FormData) {
+  const parsed = settlementUpdateSchema.safeParse(Object.fromEntries(formData));
+  const groupId = String(formData.get("groupId") ?? "");
+  if (!parsed.success) fail(`/groups/${groupId}`, "Revisa los datos de la liquidación");
+
+  const { supabase } = await requireUser();
+  const { data, error } = await supabase
+    .from("settlements")
+    .update({
+      amount_cents: Math.round(parsed.data.amount * 100),
+      note: parsed.data.note || null,
+      settled_at: `${parsed.data.settledOn}T12:00:00.000Z`,
+    })
+    .eq("id", parsed.data.settlementId)
+    .eq("group_id", parsed.data.groupId)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !data) fail(`/groups/${parsed.data.groupId}`, "No pudimos actualizar la liquidación");
+  redirect(`/groups/${parsed.data.groupId}?success=settlement-updated`);
+}
+
+export async function deleteSettlement(formData: FormData) {
+  const parsed = z.object({ groupId: z.uuid(), settlementId: z.uuid() }).safeParse(Object.fromEntries(formData));
+  const groupId = String(formData.get("groupId") ?? "");
+  if (!parsed.success) fail(`/groups/${groupId}`, "Liquidación inválida");
+
+  const { supabase } = await requireUser();
+  const { data, error } = await supabase
+    .from("settlements")
+    .delete()
+    .eq("id", parsed.data.settlementId)
+    .eq("group_id", parsed.data.groupId)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !data) fail(`/groups/${parsed.data.groupId}`, "No pudimos eliminar la liquidación");
+  redirect(`/groups/${parsed.data.groupId}?success=settlement-deleted`);
+}
+
 export async function acceptInvitation(formData: FormData) {
   const token = z.string().min(20).safeParse(formData.get("token"));
   if (!token.success) fail("/groups", "El enlace de invitación no es válido");
@@ -151,4 +241,13 @@ export async function acceptInvitation(formData: FormData) {
     fail("/groups", "La invitación expiró, ya fue utilizada o pertenece a otro correo");
   }
   redirect(`/groups/${data}?success=joined`);
+}
+
+function equalSplits(amountCents: number, memberIds: string[]) {
+  const base = Math.floor(amountCents / memberIds.length);
+  const remainder = amountCents % memberIds.length;
+  return memberIds.map((userId, index) => ({
+    user_id: userId,
+    amount_cents: base + (index < remainder ? 1 : 0),
+  }));
 }
