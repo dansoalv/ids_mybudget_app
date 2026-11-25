@@ -73,7 +73,7 @@ const planDetails: Array<{
     description: "Lo esencial para ordenar tus finanzas y compartir un espacio.",
     icon: BadgeCheck,
     tone: "bg-aqua/25 text-brand",
-    features: ["Movimientos editables", "Presupuestos por categoría", "1 grupo con gastos editables", "Eliminación con confirmación"],
+    features: ["Movimientos personales editables", "Presupuestos por categoría", "1 grupo compartido", "Registro de gastos y liquidaciones"],
   },
   {
     id: "plus",
@@ -82,7 +82,7 @@ const planDetails: Array<{
     description: "Para administrar varios espacios y automatizar tu mes.",
     icon: Crown,
     tone: "bg-cream text-accent",
-    features: ["Todo lo incluido en Gratis", "Grupos ilimitados", "Movimientos recurrentes y recordatorios", "Automatización del presupuesto", "Exportación de información"],
+    features: ["Todo lo incluido en Gratis", "Grupos ilimitados y editables", "Edición de gastos y liquidaciones", "Movimientos recurrentes y recordatorios", "Exportación de información"],
   },
   {
     id: "family",

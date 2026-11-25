@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireUser } from "@/lib/auth";
+import { readBillingAccess } from "@/lib/billing/entitlements";
 
 const groupSchema = z.object({
   name: z.string().trim().min(2).max(80),
@@ -13,6 +14,13 @@ const groupSchema = z.object({
 
 function fail(path: string, message: string): never {
   redirect(`${path}?error=${encodeURIComponent(message)}`);
+}
+
+async function requirePaidAccess(path: string) {
+  const context = await requireUser();
+  const access = await readBillingAccess(context.supabase, context.user.id);
+  if (!access.hasPlus) fail(path, "Editar o eliminar contenido del grupo requiere Plus o Familiar");
+  return context;
 }
 
 export async function createGroup(formData: FormData) {
@@ -39,6 +47,40 @@ export async function createGroup(formData: FormData) {
   }
 
   redirect(`/groups/${groupId}`);
+}
+
+export async function updateGroup(formData: FormData) {
+  const groupId = z.uuid().safeParse(formData.get("groupId"));
+  const parsed = groupSchema.safeParse(Object.fromEntries(formData));
+  if (!groupId.success || !parsed.success) fail("/groups", "Revisa los datos del grupo");
+
+  const { supabase } = await requirePaidAccess(`/groups/${groupId.data}`);
+  const { data, error } = await supabase
+    .from("groups")
+    .update({ name: parsed.data.name, kind: parsed.data.kind })
+    .eq("id", groupId.data)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !data) fail(`/groups/${groupId.data}`, "No pudimos actualizar el grupo");
+  redirect(`/groups/${groupId.data}?success=group-updated`);
+}
+
+export async function deleteGroup(formData: FormData) {
+  const groupId = z.uuid().safeParse(formData.get("groupId"));
+  if (!groupId.success) fail("/groups", "Grupo inválido");
+
+  const { supabase, user } = await requirePaidAccess(`/groups/${groupId.data}`);
+  const { data, error } = await supabase
+    .from("groups")
+    .delete()
+    .eq("id", groupId.data)
+    .eq("owner_id", user.id)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !data) fail(`/groups/${groupId.data}`, "Sólo el propietario puede eliminar el grupo");
+  redirect("/groups?success=group-deleted");
 }
 
 export async function createInvitation(formData: FormData) {
@@ -113,7 +155,7 @@ export async function updateSharedExpense(formData: FormData) {
 
   const amountCents = Math.round(parsed.data.amount * 100);
   if (amountCents < parsed.data.memberIds.length) fail(`/groups/${groupId}`, "El importe es demasiado pequeño para dividirlo entre todos");
-  const { supabase } = await requireUser();
+  const { supabase } = await requirePaidAccess(`/groups/${parsed.data.groupId}`);
   const { data, error } = await supabase.rpc("update_shared_expense", {
     p_transaction_id: parsed.data.transactionId,
     p_group_id: parsed.data.groupId,
@@ -134,7 +176,7 @@ export async function deleteSharedExpense(formData: FormData) {
   const groupId = String(formData.get("groupId") ?? "");
   if (!parsed.success) fail(`/groups/${groupId}`, "Gasto inválido");
 
-  const { supabase } = await requireUser();
+  const { supabase } = await requirePaidAccess(`/groups/${parsed.data.groupId}`);
   const { data, error } = await supabase
     .from("transactions")
     .delete()
@@ -190,7 +232,7 @@ export async function updateSettlement(formData: FormData) {
   const groupId = String(formData.get("groupId") ?? "");
   if (!parsed.success) fail(`/groups/${groupId}`, "Revisa los datos de la liquidación");
 
-  const { supabase } = await requireUser();
+  const { supabase } = await requirePaidAccess(`/groups/${parsed.data.groupId}`);
   const { data, error } = await supabase
     .from("settlements")
     .update({
@@ -212,7 +254,7 @@ export async function deleteSettlement(formData: FormData) {
   const groupId = String(formData.get("groupId") ?? "");
   if (!parsed.success) fail(`/groups/${groupId}`, "Liquidación inválida");
 
-  const { supabase } = await requireUser();
+  const { supabase } = await requirePaidAccess(`/groups/${parsed.data.groupId}`);
   const { data, error } = await supabase
     .from("settlements")
     .delete()

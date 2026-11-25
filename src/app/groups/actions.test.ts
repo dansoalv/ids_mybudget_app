@@ -9,6 +9,9 @@ const { insert, from, redirect, requireUser } = vi.hoisted(() => ({
 
 vi.mock("next/navigation", () => ({ redirect }));
 vi.mock("@/lib/auth", () => ({ requireUser }));
+vi.mock("@/lib/billing/entitlements", () => ({
+  readBillingAccess: vi.fn(),
+}));
 
 import { createGroup } from "./actions";
 

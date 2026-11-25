@@ -9,8 +9,8 @@ import { readBillingAccess } from "@/lib/billing/entitlements";
 
 import { createGroup } from "./actions";
 
-export default async function GroupsPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
-  const { error } = await searchParams;
+export default async function GroupsPage({ searchParams }: { searchParams: Promise<{ error?: string; success?: string }> }) {
+  const { error, success } = await searchParams;
   const configured = isSupabaseConfigured();
   let groups: { id: string; name: string; kind: string; owner_id?: string }[];
   let isAtFreeGroupLimit = false;
@@ -36,6 +36,7 @@ export default async function GroupsPage({ searchParams }: { searchParams: Promi
       <AppHeader title="Grupos" />
       <main className="mx-auto grid max-w-6xl gap-6 px-5 py-8 sm:px-8 lg:grid-cols-[1fr_380px]">
         <section>
+          {success === "group-deleted" ? <p className="mb-5 rounded-2xl bg-aqua/35 px-5 py-4 text-sm font-bold text-ink" role="status">Grupo eliminado correctamente.</p> : null}
           <h2 className="text-2xl font-extrabold">Gastos en equipo</h2>
           <p className="mt-2 text-slate-500">Crea un espacio para casa, viajes, pareja o amigos.</p>
           <div className="mt-6 grid gap-4 sm:grid-cols-2">

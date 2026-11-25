@@ -7,7 +7,6 @@ import {
   Crown,
   Download,
   Home,
-  Pencil,
   ReceiptText,
   Sparkles,
   Utensils,
@@ -15,6 +14,7 @@ import {
 
 import { AppHeader } from "@/components/app-header";
 import { ConfirmDeleteButton } from "@/components/confirm-delete-button";
+import { EditModal } from "@/components/edit-modal";
 import { MobileNavigation } from "@/components/mobile-navigation";
 import { requireUser } from "@/lib/auth";
 import { readBillingAccess } from "@/lib/billing/entitlements";
@@ -150,9 +150,8 @@ function TransactionItem({ transaction, editable }: { transaction: Transaction; 
     <div className="py-4">
       <div className="flex items-center gap-3 sm:gap-4"><span className={cn("grid size-11 shrink-0 place-items-center rounded-2xl", meta.tone)}><Icon className="size-5" /></span><div className="min-w-0 flex-1"><div className="flex items-center gap-2"><p className="truncate font-bold">{transaction.title}</p>{transaction.scope === "shared" ? <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-extrabold text-slate-500">Compartido</span> : null}</div><p className="mt-0.5 truncate text-sm text-slate-500">{meta.label} · {transaction.groupName ?? date}</p></div><p className="whitespace-nowrap font-extrabold text-ink">{transaction.type === "income" ? "+" : "−"}{formatMoney(transaction.amountCents)}</p></div>
       {editable ? (
-        <details className="group mt-3 rounded-2xl bg-slate-50">
-          <summary className="flex min-h-11 cursor-pointer list-none items-center justify-center gap-2 text-sm font-extrabold text-ink"><Pencil className="size-4" />Editar movimiento</summary>
-          <div className="border-t border-slate-200 p-4">
+        <div className="mt-3">
+          <EditModal title="Editar movimiento" description="Actualiza los datos o elimina este movimiento personal." triggerLabel="Editar movimiento" triggerClassName="w-full">
             <form action={updatePersonalTransaction} className="grid gap-3 sm:grid-cols-2">
               <input type="hidden" name="id" value={transaction.id} />
               <label className="block sm:col-span-2"><span className="text-sm font-bold">Concepto</span><input name="title" defaultValue={transaction.title} required minLength={2} className="mt-2 min-h-12 w-full rounded-xl border border-slate-200 bg-white px-3" /></label>
@@ -166,8 +165,8 @@ function TransactionItem({ transaction, editable }: { transaction: Transaction; 
               <input type="hidden" name="id" value={transaction.id} />
               <ConfirmDeleteButton message={`¿Eliminar “${transaction.title}”? Esta acción no se puede deshacer.`} label="Eliminar movimiento" className="w-full" />
             </form>
-          </div>
-        </details>
+          </EditModal>
+        </div>
       ) : null}
     </div>
   );

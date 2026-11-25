@@ -1,6 +1,6 @@
 begin;
 
-select plan(21);
+select plan(23);
 
 select has_type('public', 'subscription_plan', 'subscription_plan enum exists');
 select has_table('public', 'subscriptions', 'subscriptions exists');
@@ -23,6 +23,8 @@ select has_function('public', 'materialize_due_recurring_transactions', array[]:
 select hasnt_trigger('public', 'monthly_budgets', 'monthly_budgets_require_paid_access', 'budgets are available on the free plan');
 select has_column('public', 'recurring_transactions', 'day_of_month', 'monthly recurrences preserve their calendar day');
 select has_function('public', 'update_shared_expense', array['uuid', 'uuid', 'text', 'text', 'bigint', 'uuid', 'jsonb', 'timestamp with time zone'], 'shared expenses can be updated atomically');
+select ok(pg_get_functiondef('private.enforce_group_update_permissions()'::regprocedure) like '%not private.has_paid_access%', 'group editing requires a paid plan');
+select ok(pg_get_functiondef('public.update_shared_expense(uuid,uuid,text,text,bigint,uuid,jsonb,timestamp with time zone)'::regprocedure) like '%not private.has_paid_access%', 'shared expense editing requires a paid plan');
 
 select * from finish();
 rollback;

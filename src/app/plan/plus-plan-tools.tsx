@@ -5,12 +5,12 @@ import {
   CheckCircle2,
   Crown,
   LockKeyhole,
-  Pencil,
   Repeat2,
   WalletCards,
 } from "lucide-react";
 
 import { ConfirmDeleteButton } from "@/components/confirm-delete-button";
+import { EditModal } from "@/components/edit-modal";
 import { formatMoney } from "@/lib/money";
 import type { Database } from "@/types/database";
 
@@ -63,7 +63,7 @@ export function PlusPlanTools(props: Props) {
                   <div className="flex items-center justify-between gap-3"><p className="font-extrabold">{category.label}</p><span className="text-xs font-bold text-slate-400">{budget ? `${percent}%` : "Sin límite"}</span></div>
                   <p className="mt-2 text-sm text-slate-500">{formatMoney(spent)}{budget ? ` de ${formatMoney(budget.limit_cents)}` : " gastados"}</p>
                   <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200"><div className={`h-full rounded-full ${percent > 100 ? "bg-accent" : "bg-brand"}`} style={{ width: `${Math.min(percent, 100)}%` }} /></div>
-                  {props.mode === "live" ? <details className="mt-4"><summary className="flex min-h-10 cursor-pointer list-none items-center justify-center gap-2 rounded-xl bg-white px-3 text-sm font-extrabold"><Pencil className="size-4" />{budget ? "Editar límite" : "Definir límite"}</summary><div className="mt-3 border-t border-slate-200 pt-3"><form action={saveMonthlyBudget} className="grid gap-3"><input type="hidden" name="month" value={props.month} /><input type="hidden" name="category" value={category.id} /><label className="block"><span className="text-sm font-bold">Límite mensual</span><input name="amount" type="number" inputMode="decimal" min="1" step="0.01" defaultValue={budget ? (budget.limit_cents / 100).toFixed(2) : undefined} required placeholder="0.00" className="mt-2 min-h-12 w-full rounded-xl border border-slate-200 bg-white px-3" /></label><button className="min-h-11 rounded-xl bg-gold px-4 font-extrabold text-ink">Guardar límite</button></form>{budget ? <form action={deleteMonthlyBudget} className="mt-3"><input type="hidden" name="id" value={budget.id} /><ConfirmDeleteButton message={`¿Eliminar el límite de ${category.label}? Tus movimientos no se eliminarán.`} label="Eliminar límite" className="w-full" /></form> : null}</div></details> : null}
+                  {props.mode === "live" ? <div className="mt-4"><EditModal title={budget ? `Editar límite de ${category.label}` : `Definir límite de ${category.label}`} description="Este límite sólo organiza tu presupuesto; no modifica tus movimientos." triggerLabel={budget ? "Editar límite" : "Definir límite"} triggerClassName="w-full bg-white"><form action={saveMonthlyBudget} className="grid gap-3"><input type="hidden" name="month" value={props.month} /><input type="hidden" name="category" value={category.id} /><label className="block"><span className="text-sm font-bold">Límite mensual</span><input name="amount" type="number" inputMode="decimal" min="1" step="0.01" defaultValue={budget ? (budget.limit_cents / 100).toFixed(2) : undefined} required placeholder="0.00" className="mt-2 min-h-12 w-full rounded-xl border border-slate-200 bg-white px-3" /></label><button className="min-h-11 rounded-xl bg-gold px-4 font-extrabold text-ink">Guardar límite</button></form>{budget ? <form action={deleteMonthlyBudget} className="mt-4 border-t border-slate-200 pt-4"><input type="hidden" name="id" value={budget.id} /><ConfirmDeleteButton message={`¿Eliminar el límite de ${category.label}? Tus movimientos no se eliminarán.`} label="Eliminar límite" className="w-full" /></form> : null}</EditModal></div> : null}
                 </div>
               );
             })}
