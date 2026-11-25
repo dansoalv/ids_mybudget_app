@@ -1,6 +1,6 @@
 begin;
 
-select plan(9);
+select plan(11);
 
 select has_type('public', 'subscription_plan', 'subscription_plan enum exists');
 select has_table('public', 'subscriptions', 'subscriptions exists');
@@ -11,6 +11,8 @@ select has_column('public', 'subscriptions', 'stripe_customer_id', 'subscription
 select has_column('public', 'subscriptions', 'stripe_subscription_id', 'subscriptions stores Stripe subscription id');
 select has_column('public', 'subscriptions', 'billing_interval', 'subscriptions stores billing interval');
 select has_table('public', 'stripe_events', 'Stripe webhook events are idempotent');
+select ok(has_table_privilege('service_role', 'public.stripe_events', 'SELECT'), 'service role reads Stripe events');
+select ok(has_table_privilege('service_role', 'public.stripe_events', 'INSERT'), 'service role records Stripe events');
 
 select * from finish();
 rollback;
