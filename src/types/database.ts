@@ -38,7 +38,16 @@ export type Database = {
           user_id: string;
           plan: Database["public"]["Enums"]["subscription_plan"];
           status: Database["public"]["Enums"]["subscription_status"];
+          stripe_customer_id: string | null;
+          stripe_subscription_id: string | null;
+          stripe_price_id: string | null;
+          billing_interval: Database["public"]["Enums"]["billing_interval"] | null;
+          current_period_starts_at: string | null;
           current_period_ends_at: string | null;
+          trial_ends_at: string | null;
+          trial_used_at: string | null;
+          grace_period_ends_at: string | null;
+          cancel_at_period_end: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -46,11 +55,40 @@ export type Database = {
           user_id: string;
           plan?: Database["public"]["Enums"]["subscription_plan"];
           status?: Database["public"]["Enums"]["subscription_status"];
+          stripe_customer_id?: string | null;
+          stripe_subscription_id?: string | null;
+          stripe_price_id?: string | null;
+          billing_interval?: Database["public"]["Enums"]["billing_interval"] | null;
+          current_period_starts_at?: string | null;
           current_period_ends_at?: string | null;
+          trial_ends_at?: string | null;
+          trial_used_at?: string | null;
+          grace_period_ends_at?: string | null;
+          cancel_at_period_end?: boolean;
           created_at?: string;
           updated_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["subscriptions"]["Insert"]>;
+        Relationships: [];
+      };
+      stripe_events: {
+        Row: {
+          event_id: string;
+          event_type: string;
+          livemode: boolean;
+          api_version: string | null;
+          event_created_at: string;
+          processed_at: string;
+        };
+        Insert: {
+          event_id: string;
+          event_type: string;
+          livemode: boolean;
+          api_version?: string | null;
+          event_created_at: string;
+          processed_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["stripe_events"]["Insert"]>;
         Relationships: [];
       };
       groups: {
@@ -241,7 +279,8 @@ export type Database = {
       invitation_status: "pending" | "accepted" | "revoked" | "expired";
       transaction_kind: "income" | "expense";
       subscription_plan: "free" | "plus" | "family";
-      subscription_status: "active" | "past_due" | "canceled";
+      subscription_status: "active" | "trialing" | "past_due" | "incomplete" | "unpaid" | "paused" | "canceled";
+      billing_interval: "month" | "year";
     };
     CompositeTypes: Record<never, never>;
   };

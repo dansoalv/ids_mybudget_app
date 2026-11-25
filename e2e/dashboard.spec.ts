@@ -37,8 +37,13 @@ test("muestra la información básica del perfil", async ({ page }) => {
   await page.getByRole("button", { name: "Plus", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Plan Plus" })).toBeVisible();
   await expect(page.getByText("Grupos ilimitados")).toBeVisible();
+  await expect(page.getByText(/\$590\/año/)).toBeVisible();
+  await expect(page.getByText("Código FUNDADOR20")).toBeVisible();
+  await page.getByRole("button", { name: "Mensual", exact: true }).click();
+  await expect(page.getByText(/\$59\/mes/)).toBeVisible();
   await page.getByRole("button", { name: "Familia", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Plan Familia" })).toBeVisible();
+  await expect(page.getByText(/\$99\/mes/)).toBeVisible();
   if ((page.viewportSize()?.width ?? 1024) < 1024) {
     await expect(page.getByRole("link", { name: /Perfil/ })).toHaveAttribute("aria-current", "page");
   }

@@ -1,14 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useFormStatus } from "react-dom";
 import type { LucideIcon } from "lucide-react";
 import {
   BadgeCheck,
   CalendarDays,
   Check,
   Coins,
+  CreditCard,
   Crown,
   Gem,
+  Gift,
   Languages,
   LogOut,
   Mail,
@@ -21,6 +24,14 @@ import {
 } from "lucide-react";
 
 import { signOut } from "@/app/login/actions";
+import { createCheckoutSession, createCustomerPortalSession } from "@/app/profile/billing-actions";
+import {
+  billingPlans,
+  formatPrice,
+  founderPromotion,
+  getPlanPriceCents,
+  type BillingInterval,
+} from "@/lib/billing/plans";
 import { cn } from "@/lib/utils";
 
 export type ProfileData = {
@@ -31,6 +42,14 @@ export type ProfileData = {
   timezone: string;
   createdAt: string;
   subscriptionPlan: "free" | "plus" | "family";
+  subscriptionStatus: "active" | "trialing" | "past_due" | "incomplete" | "unpaid" | "paused" | "canceled";
+  billingInterval: BillingInterval | null;
+  currentPeriodEndsAt: string | null;
+  trialEndsAt: string | null;
+  gracePeriodEndsAt: string | null;
+  cancelAtPeriodEnd: boolean;
+  hasBillingCustomer: boolean;
+  billingEnabled: boolean;
   ownedGroupCount: number;
   mode: "demo" | "live";
 };
@@ -77,7 +96,7 @@ const planDetails: Array<{
 ];
 const freePlan = planDetails[0]!;
 
-export function ProfileContent({ profile }: { profile: ProfileData }) {
+export function ProfileContent({ profile, billingNotice }: { profile: ProfileData; billingNotice?: string }) {
   const [section, setSection] = useState<ProfileSection>("account");
   const [selectedPlan, setSelectedPlan] = useState<PlanId>(profile.subscriptionPlan);
   const initials = profile.displayName
@@ -87,6 +106,16 @@ export function ProfileContent({ profile }: { profile: ProfileData }) {
     .join("")
     .toUpperCase();
   const currentPlan = planDetails.find((item) => item.id === profile.subscriptionPlan) ?? freePlan;
+
+  useEffect(() => {
+    function applyHash() {
+      if (window.location.hash === "#subscription") setSection("subscription");
+    }
+
+    applyHash();
+    window.addEventListener("hashchange", applyHash);
+    return () => window.removeEventListener("hashchange", applyHash);
+  }, []);
 
   function openSubscription() {
     setSelectedPlan(profile.subscriptionPlan);
@@ -117,7 +146,7 @@ export function ProfileContent({ profile }: { profile: ProfileData }) {
       </div>
 
       <div className="mt-5">
-        {section === "account" ? <AccountPanel profile={profile} /> : <SubscriptionPanel profile={profile} selectedPlan={selectedPlan} onSelectPlan={setSelectedPlan} />}
+        {section === "account" ? <AccountPanel profile={profile} /> : <SubscriptionPanel profile={profile} selectedPlan={selectedPlan} onSelectPlan={setSelectedPlan} billingNotice={billingNotice} />}
       </div>
     </>
   );
@@ -170,27 +199,64 @@ function InfoTile({ icon: Icon, label, value }: { icon: LucideIcon; label: strin
   );
 }
 
-function SubscriptionPanel({ profile, selectedPlan, onSelectPlan }: { profile: ProfileData; selectedPlan: PlanId; onSelectPlan: (plan: PlanId) => void }) {
+function SubscriptionPanel({
+  profile,
+  selectedPlan,
+  onSelectPlan,
+  billingNotice,
+}: {
+  profile: ProfileData;
+  selectedPlan: PlanId;
+  onSelectPlan: (plan: PlanId) => void;
+  billingNotice?: string;
+}) {
+  const [interval, setInterval] = useState<BillingInterval>(profile.billingInterval ?? "year");
   const detail = planDetails.find((item) => item.id === selectedPlan) ?? freePlan;
   const DetailIcon = detail.icon;
   const freeUsage = Math.min(profile.ownedGroupCount, 1);
   const isCurrent = selectedPlan === profile.subscriptionPlan;
+  const isPaidSelection = selectedPlan !== "free";
+  const hasPaidSubscription = profile.subscriptionPlan !== "free" && profile.hasBillingCustomer;
+  const priceCents = getPlanPriceCents(selectedPlan, interval);
+  const monthlyEquivalent = interval === "year" ? Math.round(priceCents / 12) : priceCents;
+  const annualSavings = selectedPlan === "free"
+    ? 0
+    : billingPlans[selectedPlan].monthlyCents * 12 - billingPlans[selectedPlan].annualCents;
 
   return (
     <section role="tabpanel" aria-label="Suscripción" className="grid items-start gap-5 lg:grid-cols-[300px_1fr]">
       <aside className="rounded-[2rem] bg-orange p-5 text-ink sm:p-6">
-        <div className="flex items-center justify-between gap-4"><div><p className="text-sm font-bold text-ink/65">Plan actual</p><h2 className="mt-1 text-2xl font-extrabold">{planDetails.find((item) => item.id === profile.subscriptionPlan)?.name}</h2></div><Sparkles className="size-6 text-ink" /></div>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-bold text-ink/65">Plan actual</p>
+            <h2 className="mt-1 text-2xl font-extrabold">{planDetails.find((item) => item.id === profile.subscriptionPlan)?.name}</h2>
+            <span className="mt-2 inline-flex rounded-full bg-white/55 px-3 py-1 text-xs font-extrabold">{subscriptionStatusLabel(profile)}</span>
+          </div>
+          <Sparkles className="size-6 text-ink" />
+        </div>
         {profile.subscriptionPlan === "free" ? (
           <div className="mt-5 rounded-2xl bg-white/45 p-4">
             <div className="flex items-center justify-between text-sm font-bold"><span>Grupos</span><span>{freeUsage} de 1</span></div>
             <div className="mt-3 h-2 overflow-hidden rounded-full bg-ink/10"><div className="h-full rounded-full bg-navy" style={{ width: `${freeUsage * 100}%` }} /></div>
           </div>
+        ) : (
+          <div className="mt-5 space-y-3 rounded-2xl bg-white/45 p-4 text-sm">
+            <div className="flex items-center justify-between gap-3"><span className="font-semibold text-ink/60">Cobro</span><span className="font-extrabold">{profile.billingInterval === "year" ? "Anual" : "Mensual"}</span></div>
+            {profile.currentPeriodEndsAt ? <div className="flex items-center justify-between gap-3"><span className="font-semibold text-ink/60">{profile.cancelAtPeriodEnd ? "Acceso hasta" : "Próxima renovación"}</span><span className="text-right font-extrabold">{formatShortDate(profile.currentPeriodEndsAt)}</span></div> : null}
+          </div>
+        )}
+        <p className="mt-4 text-sm leading-6 text-ink/60">Empieza con Gratis y mejora cuando necesites más grupos, automatización y herramientas para compartir.</p>
+        {profile.hasBillingCustomer && profile.billingEnabled ? (
+          <form action={createCustomerPortalSession} className="mt-4">
+            <BillingSubmitButton label="Administrar pago" tone="light" />
+          </form>
         ) : null}
-        <p className="mt-4 text-sm leading-6 text-ink/60">Todas las cuentas comienzan en Gratis. Los planes superiores estarán disponibles próximamente.</p>
       </aside>
 
       <div className="rounded-[2rem] border border-slate-200/70 bg-white p-5 shadow-sm sm:p-7">
-        <div className="grid grid-cols-3 gap-2" aria-label="Comparar planes">
+        {billingNotice ? <BillingNotice notice={billingNotice} /> : null}
+
+        <div className="grid grid-cols-3 gap-2" role="group" aria-label="Comparar planes">
           {planDetails.map((plan) => (
             <button key={plan.id} type="button" aria-pressed={selectedPlan === plan.id} onClick={() => onSelectPlan(plan.id)} className={cn("min-h-11 rounded-xl px-2 text-sm font-extrabold transition", selectedPlan === plan.id ? "bg-gold text-ink" : "bg-slate-100 text-slate-500")}>
               {plan.name}
@@ -198,21 +264,97 @@ function SubscriptionPanel({ profile, selectedPlan, onSelectPlan }: { profile: P
           ))}
         </div>
 
+        {isPaidSelection ? (
+          <div className="mt-4 grid grid-cols-2 rounded-2xl bg-slate-100 p-1" role="group" aria-label="Periodicidad del pago">
+            <button type="button" aria-pressed={interval === "month"} onClick={() => setInterval("month")} className={cn("min-h-11 rounded-xl text-sm font-extrabold", interval === "month" ? "bg-white text-ink shadow-sm" : "text-ink/55")}>Mensual</button>
+            <button type="button" aria-pressed={interval === "year"} onClick={() => setInterval("year")} className={cn("min-h-11 rounded-xl text-sm font-extrabold", interval === "year" ? "bg-white text-ink shadow-sm" : "text-ink/55")}>Anual · 2 meses gratis</button>
+          </div>
+        ) : null}
+
         <div className="mt-6 flex items-start gap-4">
           <span className={cn("grid size-12 shrink-0 place-items-center rounded-2xl", detail.tone)}><DetailIcon className="size-6" /></span>
-          <div><p className="text-sm font-bold text-ink/65">{detail.eyebrow}</p><h2 className="text-2xl font-extrabold">Plan {detail.name}</h2><p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">{detail.description}</p></div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold text-ink/65">{detail.eyebrow}</p>
+            <div className="mt-1 flex flex-wrap items-end justify-between gap-3">
+              <h2 className="text-2xl font-extrabold">Plan {detail.name}</h2>
+              <div className="text-right">
+                <p className="text-3xl font-extrabold">{formatPrice(priceCents)}<span className="text-sm font-bold text-ink/55">{detail.id === "free" ? " para siempre" : `/${interval === "year" ? "año" : "mes"}`}</span></p>
+                {isPaidSelection && interval === "year" ? <p className="mt-1 text-xs font-bold text-ink/55">Equivale a {formatPrice(monthlyEquivalent)}/mes · ahorras {formatPrice(annualSavings)}</p> : null}
+              </div>
+            </div>
+            <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">{detail.description}</p>
+          </div>
         </div>
 
         <ul className="mt-6 grid gap-3 sm:grid-cols-2">
           {detail.features.map((feature) => <li key={feature} className="flex gap-3 rounded-2xl bg-slate-50 p-3 text-sm font-semibold text-slate-600"><Check className="mt-0.5 size-4 shrink-0 text-teal" />{feature}</li>)}
         </ul>
 
-        <div className={cn("mt-6 flex min-h-12 items-center justify-center rounded-2xl px-4 text-sm font-extrabold", isCurrent ? "bg-slate-100 text-slate-500" : "bg-accent text-ink")}>
-          {isCurrent ? "Tu plan actual" : "Próximamente"}
+        {isPaidSelection ? (
+          <div className="mt-6 flex gap-3 rounded-2xl bg-cream p-4">
+            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-gold"><Gift className="size-5" /></span>
+            <div><p className="text-sm font-extrabold">Código {founderPromotion.code}</p><p className="mt-1 text-sm leading-6 text-ink/60">{founderPromotion.percentOff}% de descuento {interval === "month" ? `durante los primeros ${founderPromotion.monthlyDuration}` : `en ${founderPromotion.annualDuration}`}. Limitado a {founderPromotion.maxRedemptions} suscripciones.</p></div>
+          </div>
+        ) : null}
+
+        <div className="mt-6">
+          {!isPaidSelection ? (
+            <div className="flex min-h-13 items-center justify-center rounded-2xl bg-slate-100 px-4 text-sm font-extrabold text-ink/55">{isCurrent ? "Tu plan actual" : "Gratis siempre"}</div>
+          ) : hasPaidSubscription ? (
+            <form action={createCustomerPortalSession}>
+              <BillingSubmitButton label={isCurrent ? "Administrar suscripción" : "Cambiar plan en Stripe"} />
+            </form>
+          ) : profile.mode === "demo" ? (
+            <button disabled className="min-h-14 w-full rounded-2xl bg-slate-100 px-5 font-extrabold text-ink/45">Checkout disponible al conectar Supabase</button>
+          ) : !profile.billingEnabled ? (
+            <button disabled className="min-h-14 w-full rounded-2xl bg-slate-100 px-5 font-extrabold text-ink/45">Completa la configuración de Stripe</button>
+          ) : (
+            <form action={createCheckoutSession}>
+              <input type="hidden" name="plan" value={selectedPlan} />
+              <input type="hidden" name="interval" value={interval} />
+              <BillingSubmitButton label="Comenzar 14 días gratis" />
+            </form>
+          )}
+          {isPaidSelection ? <p className="mt-3 flex items-center justify-center gap-2 text-center text-xs font-semibold text-ink/55"><CreditCard className="size-4" />Pago seguro con Stripe. Puedes ingresar {founderPromotion.code} en Checkout.</p> : null}
         </div>
       </div>
     </section>
   );
+}
+
+function BillingSubmitButton({ label, tone = "primary" }: { label: string; tone?: "primary" | "light" }) {
+  const { pending } = useFormStatus();
+  return (
+    <button disabled={pending} className={cn("min-h-13 w-full rounded-2xl px-5 font-extrabold transition disabled:opacity-60", tone === "light" ? "bg-white/65 text-ink" : "bg-accent text-ink")}>
+      {pending ? "Abriendo Stripe…" : label}
+    </button>
+  );
+}
+
+function BillingNotice({ notice }: { notice: string }) {
+  const messages: Record<string, string> = {
+    success: "Pago recibido. Stripe está sincronizando los beneficios de tu cuenta.",
+    canceled: "Cancelaste el proceso. No se realizó ningún cargo.",
+    configuration: "Falta completar la configuración de Stripe antes de aceptar pagos.",
+    portal: "No pudimos abrir el portal de pagos. Intenta nuevamente.",
+    invalid: "La selección de plan no es válida.",
+    error: "No pudimos iniciar el pago. Intenta nuevamente en unos minutos.",
+  };
+  const message = messages[notice];
+  if (!message) return null;
+  return <p className="mb-5 rounded-2xl bg-cream px-4 py-3 text-sm font-semibold text-ink" role="status">{message}</p>;
+}
+
+function subscriptionStatusLabel(profile: ProfileData) {
+  if (profile.subscriptionPlan === "free") return "Sin costo";
+  if (profile.cancelAtPeriodEnd) return "Cancela al finalizar";
+  if (profile.subscriptionStatus === "trialing") return "Prueba gratuita";
+  if (profile.subscriptionStatus === "past_due") return "Pago pendiente";
+  return "Activa";
+}
+
+function formatShortDate(value: string) {
+  return new Intl.DateTimeFormat("es-MX", { day: "numeric", month: "short", year: "numeric" }).format(new Date(value));
 }
 
 function localeLabel(locale: string) {
