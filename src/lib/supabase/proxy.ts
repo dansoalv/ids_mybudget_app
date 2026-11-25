@@ -4,6 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/types/database";
 
 import { getSupabaseConfig, isSupabaseConfigured } from "./config";
+import { safeDestination } from "../navigation";
 
 export async function updateSession(request: NextRequest) {
   if (!isSupabaseConfigured()) {
@@ -42,14 +43,16 @@ export async function updateSession(request: NextRequest) {
   if (!isAuthenticated && !isPublicRoute) {
     const urlToLogin = request.nextUrl.clone();
     urlToLogin.pathname = "/login";
-    urlToLogin.searchParams.set("next", pathname);
+    urlToLogin.searchParams.set("next", `${pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(urlToLogin);
   }
 
   if (isAuthenticated && pathname === "/login") {
     const destination = request.nextUrl.clone();
-    destination.pathname = "/";
-    destination.search = "";
+    const next = safeDestination(request.nextUrl.searchParams.get("next"));
+    const [nextPathname = "/", nextSearch = ""] = next.split("?", 2);
+    destination.pathname = nextPathname;
+    destination.search = nextSearch ? `?${nextSearch}` : "";
     return NextResponse.redirect(destination);
   }
 

@@ -1,5 +1,7 @@
 import Stripe from "stripe";
 
+export { getAppUrl } from "@/lib/app-url";
+
 import type { BillingInterval, PaidPlanId } from "@/lib/billing/plans";
 
 let stripeClient: Stripe | undefined;
@@ -57,12 +59,5 @@ export function getStripeWebhookSecret() {
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!secret) throw new Error("STRIPE_WEBHOOK_SECRET is not configured");
   return secret;
-}
-
-export function getAppUrl() {
-  const configuredUrl = process.env.NEXT_PUBLIC_APP_URL;
-  const vercelUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL ?? process.env.VERCEL_URL;
-  const value = configuredUrl || (vercelUrl ? `https://${vercelUrl}` : "http://localhost:3000");
-  return new URL(value).origin;
 }
 

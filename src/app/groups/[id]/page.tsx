@@ -4,6 +4,7 @@ import { Copy, HandCoins, ReceiptText, UserPlus, Users } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
 import { MobileNavigation } from "@/components/mobile-navigation";
 import { createInvitation, createSettlement, createSharedExpense } from "@/app/groups/actions";
+import { getAppUrl } from "@/lib/app-url";
 import { requireUser } from "@/lib/auth";
 import { formatMoney } from "@/lib/money";
 
@@ -34,8 +35,7 @@ export default async function GroupDetailPage({
   const names = new Map((profilesResult.data ?? []).map((profile) => [profile.id, profile.display_name]));
   const currentRole = members.find((member) => member.user_id === user.id)?.role;
   const canInvite = currentRole === "owner" || currentRole === "admin";
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const invitationUrl = query.invite ? `${appUrl}/invite/${query.invite}` : null;
+  const invitationUrl = query.invite ? `${getAppUrl()}/invite/${query.invite}` : null;
 
   return (
     <div className="min-h-dvh bg-surface pb-[calc(6.5rem+env(safe-area-inset-bottom))] text-ink lg:pb-12">
@@ -98,7 +98,7 @@ export default async function GroupDetailPage({
 
         {canInvite ? (
           <section className="mt-6 rounded-[2rem] bg-cream p-6">
-            <div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-2xl bg-white text-accent"><UserPlus className="size-5" /></span><div><h2 className="font-extrabold">Invitar integrante</h2><p className="text-sm text-slate-500">El enlace vence en 7 días.</p></div></div>
+            <div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-2xl bg-white text-accent"><UserPlus className="size-5" /></span><div><h2 className="font-extrabold">Invitar integrante</h2><p className="text-sm text-slate-500">Cada enlace sirve para una persona y vence en 7 días.</p></div></div>
             <form action={createInvitation} className="mt-5 flex flex-col gap-3 sm:flex-row"><input type="hidden" name="groupId" value={id} /><input name="email" type="email" placeholder="Correo específico (opcional)" className="min-h-12 min-w-0 flex-1 rounded-2xl border border-white bg-white px-4" /><button className="min-h-12 rounded-2xl bg-accent px-5 font-extrabold text-ink">Crear enlace</button></form>
             {invitationUrl ? <div className="mt-4 flex items-center gap-3 rounded-2xl bg-white p-4"><Copy className="size-5 shrink-0 text-teal" /><p className="min-w-0 flex-1 break-all text-sm font-semibold">{invitationUrl}</p></div> : null}
           </section>

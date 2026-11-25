@@ -3,6 +3,8 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
+import { getAppUrl } from "@/lib/app-url";
+import { safeDestination } from "@/lib/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
@@ -30,11 +32,6 @@ const passwordUpdateSchema = z
     path: ["confirmPassword"],
   });
 
-function safeDestination(value: FormDataEntryValue | null) {
-  const destination = typeof value === "string" ? value : "/";
-  return destination.startsWith("/") && !destination.startsWith("//") ? destination : "/";
-}
-
 export async function signIn(_state: AuthActionState, formData: FormData): Promise<AuthActionState> {
   const parsed = credentialsSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0]?.message };
@@ -53,17 +50,24 @@ export async function signUp(_state: AuthActionState, formData: FormData): Promi
   if (!parsed.success) return { error: parsed.error.issues[0]?.message };
 
   const supabase = await createClient();
+  const destination = safeDestination(formData.get("next"));
+  const confirmationUrl = new URL("/auth/confirm", getAppUrl());
+  confirmationUrl.searchParams.set("next", destination);
   const { error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
     options: {
       data: { display_name: parsed.data.displayName },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/auth/callback`,
+      emailRedirectTo: confirmationUrl.toString(),
     },
   });
 
   if (error) return { error: "No pudimos crear la cuenta. Intenta con otro correo." };
-  return { message: "Cuenta creada. Revisa tu correo para confirmar el acceso." };
+  return {
+    message: destination.startsWith("/invite/")
+      ? "Cuenta creada. Confirma tu correo y volverás a la invitación."
+      : "Cuenta creada. Revisa tu correo para confirmar el acceso.",
+  };
 }
 
 export async function requestPasswordReset(_state: AuthActionState, formData: FormData): Promise<AuthActionState> {
@@ -74,8 +78,7 @@ export async function requestPasswordReset(_state: AuthActionState, formData: Fo
   if (!isSupabaseConfigured()) return { message: successMessage };
 
   const supabase = await createClient();
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const callbackUrl = new URL("/auth/callback", appUrl);
+  const callbackUrl = new URL("/auth/confirm", getAppUrl());
   callbackUrl.searchParams.set("next", "/update-password");
 
   const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email, {

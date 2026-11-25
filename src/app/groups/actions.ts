@@ -141,6 +141,14 @@ export async function acceptInvitation(formData: FormData) {
 
   const { supabase } = await requireUser();
   const { data, error } = await supabase.rpc("accept_group_invitation", { p_token: token.data });
-  if (error || !data) fail("/groups", "La invitación expiró o pertenece a otro correo");
+  if (error || !data) {
+    console.error("Invitation acceptance failed", {
+      code: error?.code,
+      details: error?.details,
+      hint: error?.hint,
+      message: error?.message,
+    });
+    fail("/groups", "La invitación expiró, ya fue utilizada o pertenece a otro correo");
+  }
   redirect(`/groups/${data}?success=joined`);
 }

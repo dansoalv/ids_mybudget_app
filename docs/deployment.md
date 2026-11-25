@@ -4,9 +4,18 @@
 
 1. Crea un proyecto en Supabase en una región cercana a los usuarios iniciales.
 2. En Authentication, habilita correo y contraseña y exige confirmación de correo.
-3. Configura `Site URL` con la URL de producción y añade `http://localhost:3000/auth/callback` para desarrollo.
-   Si personalizas la plantilla de confirmación con `token_hash`, dirígela a `/auth/confirm`; la app admite tanto PKCE (`/auth/callback`) como OTP (`/auth/confirm`).
-4. Instala Supabase CLI, inicia sesión y enlaza este repositorio:
+3. Configura `Site URL` con `https://mybudget.inovaceds.com` y añade estas Redirect URLs:
+   `https://mybudget.inovaceds.com/auth/confirm`, `https://mybudget.inovaceds.com/auth/callback`,
+   `http://localhost:3000/auth/confirm` y `http://localhost:3000/auth/callback`.
+4. Para que la confirmación funcione aunque el correo se abra en otro navegador, cambia el enlace de la
+   plantilla **Confirm signup** por el siguiente (conserva el resto del HTML):
+
+```html
+<a href="{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=email">Confirmar mi correo</a>
+```
+
+La app envía `RedirectTo` hacia `/auth/confirm` e incluye el destino original, como una invitación pendiente.
+5. Instala Supabase CLI, inicia sesión y enlaza este repositorio:
 
 ```bash
 npx supabase login
