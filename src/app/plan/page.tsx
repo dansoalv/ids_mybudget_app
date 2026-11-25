@@ -12,10 +12,16 @@ import {
 
 import { AppHeader } from "@/components/app-header";
 import { MobileNavigation } from "@/components/mobile-navigation";
+import { requireUser } from "@/lib/auth";
+import { readBillingAccess } from "@/lib/billing/entitlements";
 import { createInformativePlan, type PlanBucket } from "@/lib/budget";
 import { formatMoney, summarizeTransactions } from "@/lib/money";
 import { readTransactions } from "@/lib/read-transactions";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { cn } from "@/lib/utils";
+import type { Database } from "@/types/database";
+
+import { PlusPlanTools } from "./plus-plan-tools";
 
 export const metadata: Metadata = { title: "Plan mensual" };
 export const dynamic = "force-dynamic";
@@ -26,7 +32,13 @@ const bucketStyle: Record<PlanBucket["id"], { icon: typeof WalletCards; tone: st
   future: { icon: PiggyBank, tone: "bg-orange text-ink", bar: "bg-brand" },
 };
 
-export default async function PlanPage() {
+type PlanPageProps = {
+  searchParams: Promise<{ success?: string; error?: string }>;
+};
+
+export default async function PlanPage({ searchParams }: PlanPageProps) {
+  const messages = await searchParams;
+  const plusData = await readPlusData();
   const { transactions, mode } = await readTransactions();
   const summary = summarizeTransactions(transactions);
   const plan = createInformativePlan(transactions);
@@ -62,6 +74,23 @@ export default async function PlanPage() {
           </div>
         </section>
 
+        <PlusPlanTools
+          hasPlus={plusData.hasPlus}
+          plan={plusData.plan}
+          mode={mode}
+          month={plusData.month}
+          budgets={plusData.budgets}
+          recurringTransactions={plusData.recurringTransactions}
+          spendingByCategory={transactions.reduce<Record<string, number>>((totals, transaction) => {
+            if (transaction.type === "expense" && transaction.occurredAt.slice(0, 7) === plusData.month.slice(0, 7)) {
+              totals[transaction.category] = (totals[transaction.category] ?? 0) + transaction.amountCents;
+            }
+            return totals;
+          }, {})}
+          notice={messages.success}
+          error={messages.error}
+        />
+
         <section className="mt-7 grid gap-6 lg:grid-cols-[1fr_0.8fr]">
           <article className="rounded-[2rem] border border-slate-200/70 bg-white p-6 shadow-sm sm:p-8">
             <div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-2xl bg-aqua/25 text-brand"><Compass className="size-5" /></span><div><p className="text-sm font-bold text-ink/65">Cómo leer este plan</p><h2 className="text-xl font-extrabold">Una brújula, no una regla</h2></div></div>
@@ -75,13 +104,13 @@ export default async function PlanPage() {
 
           <aside className="rounded-[2rem] bg-cream p-6 sm:p-8">
             <span className="grid size-11 place-items-center rounded-2xl bg-white text-accent"><BellRing className="size-5" /></span>
-            <p className="mt-5 text-sm font-extrabold uppercase tracking-[0.14em] text-ink/65">Próxima etapa</p>
-            <h2 className="mt-2 text-2xl font-extrabold">Planes configurables</h2>
+            <p className="mt-5 text-sm font-extrabold uppercase tracking-[0.14em] text-ink/65">También en camino</p>
+            <h2 className="mt-2 text-2xl font-extrabold">Más herramientas para planear</h2>
             <ul className="mt-5 space-y-3 text-sm font-semibold text-slate-600">
-              <li className="flex gap-3"><CircleCheck className="mt-0.5 size-4 shrink-0 text-teal" />Límites por categoría</li>
               <li className="flex gap-3"><CircleCheck className="mt-0.5 size-4 shrink-0 text-teal" />Metas de ahorro con fecha</li>
-              <li className="flex gap-3"><CircleCheck className="mt-0.5 size-4 shrink-0 text-teal" />Alertas antes de exceder el plan</li>
+              <li className="flex gap-3"><CircleCheck className="mt-0.5 size-4 shrink-0 text-teal" />Alertas push antes de exceder el plan</li>
               <li className="flex gap-3"><CircleCheck className="mt-0.5 size-4 shrink-0 text-teal" />Planes compartidos para grupos</li>
+              <li className="flex gap-3"><CircleCheck className="mt-0.5 size-4 shrink-0 text-teal" />Comparativos entre meses</li>
             </ul>
           </aside>
         </section>
@@ -89,6 +118,46 @@ export default async function PlanPage() {
       <MobileNavigation active="plan" />
     </div>
   );
+}
+
+type Budget = Database["public"]["Tables"]["monthly_budgets"]["Row"];
+type RecurringTransaction = Database["public"]["Tables"]["recurring_transactions"]["Row"];
+
+async function readPlusData(): Promise<{
+  hasPlus: boolean;
+  plan: "free" | "plus" | "family";
+  month: string;
+  budgets: Budget[];
+  recurringTransactions: RecurringTransaction[];
+}> {
+  const month = `${new Date().toISOString().slice(0, 7)}-01`;
+  if (!isSupabaseConfigured()) {
+    return { hasPlus: false, plan: "free", month, budgets: [], recurringTransactions: [] };
+  }
+
+  const { supabase, user } = await requireUser();
+  const access = await readBillingAccess(supabase, user.id);
+  if (!access.hasPlus) {
+    return { hasPlus: false, plan: "free", month, budgets: [], recurringTransactions: [] };
+  }
+
+  await supabase.rpc("materialize_due_recurring_transactions");
+  const [budgetsResult, recurringResult] = await Promise.all([
+    supabase.from("monthly_budgets").select("*").eq("month", month).order("category"),
+    supabase.from("recurring_transactions").select("*").eq("active", true).order("next_run_on"),
+  ]);
+
+  if (budgetsResult.error || recurringResult.error) {
+    throw new Error("No se pudieron consultar las herramientas Plus");
+  }
+
+  return {
+    hasPlus: true,
+    plan: access.plan,
+    month,
+    budgets: budgetsResult.data ?? [],
+    recurringTransactions: recurringResult.data ?? [],
+  };
 }
 
 function PlanCard({ bucket }: { bucket: PlanBucket }) {

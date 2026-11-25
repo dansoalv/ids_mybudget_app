@@ -20,6 +20,7 @@ export default async function HomePage() {
   }
 
   const { supabase, user } = await requireUser();
+  await supabase.rpc("materialize_due_recurring_transactions");
 
   const [profileResult, transactionResult, groupResult, balanceResult] = await Promise.all([
     supabase.from("profiles").select("display_name").eq("id", user.id).single(),

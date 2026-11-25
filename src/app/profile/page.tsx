@@ -4,6 +4,7 @@ import { AppHeader } from "@/components/app-header";
 import { MobileNavigation } from "@/components/mobile-navigation";
 import { requireUser } from "@/lib/auth";
 import { isStripeCheckoutConfigured } from "@/lib/billing/stripe";
+import { hasPaidSubscriptionAccess } from "@/lib/billing/plans";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 import { ProfileContent, type ProfileData } from "./profile-content";
@@ -69,13 +70,11 @@ async function readProfile(): Promise<ProfileData> {
   }
 
   const subscription = subscriptionResult.data;
-  const hasPaidAccess = subscription?.status === "active" ||
-    subscription?.status === "trialing" ||
-    (
-      subscription?.status === "past_due" &&
-      Boolean(subscription.grace_period_ends_at) &&
-      new Date(subscription.grace_period_ends_at!).getTime() > Date.now()
-    );
+  const hasPaidAccess = hasPaidSubscriptionAccess(subscription ? {
+    plan: subscription.plan,
+    status: subscription.status,
+    gracePeriodEndsAt: subscription.grace_period_ends_at,
+  } : null);
   const subscriptionPlan = hasPaidAccess ? subscription?.plan ?? "free" : "free";
 
   return {

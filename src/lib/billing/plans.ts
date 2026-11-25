@@ -5,6 +5,12 @@ export const paidPlanIds = ["plus", "family"] as const;
 export type PaidPlanId = (typeof paidPlanIds)[number];
 export type BillingPlanId = "free" | PaidPlanId;
 
+export type SubscriptionAccessInput = {
+  plan?: BillingPlanId | null;
+  status?: "active" | "trialing" | "past_due" | "incomplete" | "unpaid" | "paused" | "canceled" | null;
+  gracePeriodEndsAt?: string | null;
+};
+
 export const billingPlans = {
   free: {
     name: "Gratis",
@@ -42,5 +48,17 @@ export function formatPrice(cents: number) {
     currency: "MXN",
     maximumFractionDigits: 0,
   }).format(cents / 100);
+}
+
+export function hasPaidSubscriptionAccess(
+  subscription: SubscriptionAccessInput | null | undefined,
+  now = new Date(),
+) {
+  if (!subscription || subscription.plan === "free") return false;
+  if (subscription.status === "active" || subscription.status === "trialing") return true;
+
+  return subscription.status === "past_due" &&
+    Boolean(subscription.gracePeriodEndsAt) &&
+    new Date(subscription.gracePeriodEndsAt!).getTime() > now.getTime();
 }
 

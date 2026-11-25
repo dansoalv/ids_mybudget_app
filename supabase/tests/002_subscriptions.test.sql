@@ -1,6 +1,6 @@
 begin;
 
-select plan(11);
+select plan(20);
 
 select has_type('public', 'subscription_plan', 'subscription_plan enum exists');
 select has_table('public', 'subscriptions', 'subscriptions exists');
@@ -13,6 +13,15 @@ select has_column('public', 'subscriptions', 'billing_interval', 'subscriptions 
 select has_table('public', 'stripe_events', 'Stripe webhook events are idempotent');
 select ok(has_table_privilege('service_role', 'public.stripe_events', 'SELECT'), 'service role reads Stripe events');
 select ok(has_table_privilege('service_role', 'public.stripe_events', 'INSERT'), 'service role records Stripe events');
+select has_table('public', 'monthly_budgets', 'Plus monthly budgets exist');
+select has_table('public', 'recurring_transactions', 'Plus recurring transactions exist');
+select has_type('public', 'recurrence_frequency', 'recurrence frequency enum exists');
+select has_column('public', 'transactions', 'recurring_transaction_id', 'transactions track their recurrence');
+select ok((select relrowsecurity from pg_class where oid = 'public.monthly_budgets'::regclass), 'monthly budgets have RLS');
+select ok((select relrowsecurity from pg_class where oid = 'public.recurring_transactions'::regclass), 'recurring transactions have RLS');
+select has_function('public', 'materialize_due_recurring_transactions', array[]::text[], 'recurring materialization function exists');
+select has_trigger('public', 'monthly_budgets', 'monthly_budgets_require_paid_access', 'budgets require a paid plan');
+select has_column('public', 'recurring_transactions', 'day_of_month', 'monthly recurrences preserve their calendar day');
 
 select * from finish();
 rollback;

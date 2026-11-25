@@ -5,6 +5,7 @@ import { AppHeader } from "@/components/app-header";
 import { MobileNavigation } from "@/components/mobile-navigation";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { requireUser } from "@/lib/auth";
+import { readBillingAccess } from "@/lib/billing/entitlements";
 
 import { createGroup } from "./actions";
 
@@ -16,14 +17,13 @@ export default async function GroupsPage({ searchParams }: { searchParams: Promi
 
   if (configured) {
     const { supabase, user } = await requireUser();
-    const [groupsResult, subscriptionResult] = await Promise.all([
+    const [groupsResult, billingAccess] = await Promise.all([
       supabase.from("groups").select("id,name,kind,owner_id").is("archived_at", null).order("created_at"),
-      supabase.from("subscriptions").select("plan,status").eq("user_id", user.id).maybeSingle(),
+      readBillingAccess(supabase, user.id),
     ]);
     groups = groupsResult.data ?? [];
-    const currentPlan = subscriptionResult.data?.status === "active" ? subscriptionResult.data.plan : "free";
     const ownedGroups = groups.filter((group) => group.owner_id === user.id).length;
-    isAtFreeGroupLimit = currentPlan === "free" && ownedGroups >= 1;
+    isAtFreeGroupLimit = !billingAccess.hasPlus && ownedGroups >= 1;
   } else {
     groups = [
       { id: "demo-casa", name: "Casa", kind: "household" },

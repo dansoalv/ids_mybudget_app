@@ -175,6 +175,8 @@ export type Database = {
           currency: string;
           notes: string | null;
           occurred_at: string;
+          recurring_transaction_id: string | null;
+          recurrence_date: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -191,10 +193,70 @@ export type Database = {
           currency?: string;
           notes?: string | null;
           occurred_at?: string;
+          recurring_transaction_id?: string | null;
+          recurrence_date?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["transactions"]["Insert"]>;
+        Relationships: [];
+      };
+      monthly_budgets: {
+        Row: {
+          id: string;
+          user_id: string;
+          month: string;
+          category: string;
+          limit_cents: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          month: string;
+          category: string;
+          limit_cents: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["monthly_budgets"]["Insert"]>;
+        Relationships: [];
+      };
+      recurring_transactions: {
+        Row: {
+          id: string;
+          user_id: string;
+          kind: Database["public"]["Enums"]["transaction_kind"];
+          title: string;
+          category: string;
+          amount_cents: number;
+          currency: string;
+          frequency: Database["public"]["Enums"]["recurrence_frequency"];
+          day_of_month: number | null;
+          next_run_on: string;
+          reminder_days_before: number;
+          active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          kind: Database["public"]["Enums"]["transaction_kind"];
+          title: string;
+          category: string;
+          amount_cents: number;
+          currency?: string;
+          frequency: Database["public"]["Enums"]["recurrence_frequency"];
+          day_of_month?: number | null;
+          next_run_on: string;
+          reminder_days_before?: number;
+          active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["recurring_transactions"]["Insert"]>;
         Relationships: [];
       };
       expense_splits: {
@@ -272,6 +334,10 @@ export type Database = {
         };
         Returns: string;
       };
+      materialize_due_recurring_transactions: {
+        Args: Record<PropertyKey, never>;
+        Returns: number;
+      };
     };
     Enums: {
       group_kind: "household" | "trip" | "friends" | "other";
@@ -281,6 +347,7 @@ export type Database = {
       subscription_plan: "free" | "plus" | "family";
       subscription_status: "active" | "trialing" | "past_due" | "incomplete" | "unpaid" | "paused" | "canceled";
       billing_interval: "month" | "year";
+      recurrence_frequency: "weekly" | "monthly";
     };
     CompositeTypes: Record<never, never>;
   };

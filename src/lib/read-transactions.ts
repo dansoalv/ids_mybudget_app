@@ -17,6 +17,7 @@ export async function readTransactions(): Promise<TransactionData> {
   }
 
   const { supabase } = await requireUser();
+  await supabase.rpc("materialize_due_recurring_transactions");
   const [transactionResult, groupResult] = await Promise.all([
     supabase
       .from("transactions")

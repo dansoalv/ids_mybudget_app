@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import {
   ArrowDownLeft,
   ArrowUpRight,
   CircleDollarSign,
+  Crown,
+  Download,
   Home,
   ReceiptText,
   Sparkles,
@@ -11,8 +14,11 @@ import {
 
 import { AppHeader } from "@/components/app-header";
 import { MobileNavigation } from "@/components/mobile-navigation";
+import { requireUser } from "@/lib/auth";
+import { readBillingAccess } from "@/lib/billing/entitlements";
 import { formatMoney, summarizeTransactions } from "@/lib/money";
 import { readTransactions } from "@/lib/read-transactions";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { cn } from "@/lib/utils";
 import type { Transaction, TransactionCategory } from "@/types/finance";
 
@@ -33,6 +39,7 @@ const categoryMeta: Record<
 
 export default async function TransactionsPage() {
   const { transactions, mode } = await readTransactions();
+  const hasPlus = await readHasPlusAccess();
   const summary = summarizeTransactions(transactions);
   const grouped = groupTransactionsByMonth(transactions);
   const categoryTotals = Object.entries(
@@ -56,7 +63,10 @@ export default async function TransactionsPage() {
             <h2 className="mt-2 text-3xl font-extrabold tracking-[-0.04em]">Todo tu mes, en orden</h2>
             <p className="mt-2 max-w-2xl text-base leading-7 text-slate-500">Consulta ingresos y gastos personales o compartidos. Esta primera versión es informativa y conserva el historial sin edición.</p>
           </div>
-          <span className="rounded-full bg-cream px-4 py-2 text-sm font-extrabold text-ink">Solo consulta · {mode === "live" ? "Datos sincronizados" : "Demostración"}</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-cream px-4 py-2 text-sm font-extrabold text-ink">Solo consulta · {mode === "live" ? "Datos sincronizados" : "Demostración"}</span>
+            {hasPlus ? <a href="/api/transactions/export" download className="flex min-h-10 items-center gap-2 rounded-full bg-navy px-4 text-sm font-extrabold text-white"><Download className="size-4" />Exportar CSV</a> : <Link href="/profile#subscription" className="flex min-h-10 items-center gap-2 rounded-full bg-gold px-4 text-sm font-extrabold text-ink"><Crown className="size-4" />Exportar con Plus</Link>}
+          </div>
         </div>
 
         <section className="mt-7 grid gap-4 sm:grid-cols-3" aria-label="Totales de movimientos">
@@ -106,6 +116,12 @@ export default async function TransactionsPage() {
       <MobileNavigation active="transactions" />
     </div>
   );
+}
+
+async function readHasPlusAccess() {
+  if (!isSupabaseConfigured()) return false;
+  const { supabase, user } = await requireUser();
+  return (await readBillingAccess(supabase, user.id)).hasPlus;
 }
 
 function Metric({ label, amount, icon: Icon, tone }: { label: string; amount: number; icon: typeof ArrowDownLeft; tone: "positive" | "negative" | "balance" }) {
