@@ -5,6 +5,7 @@ import { Copy, Crown, HandCoins, ReceiptText, UserPlus, Users } from "lucide-rea
 import { AppHeader } from "@/components/app-header";
 import { ConfirmDeleteButton } from "@/components/confirm-delete-button";
 import { EditModal } from "@/components/edit-modal";
+import { ExpenseParticipantSelector } from "@/components/expense-participant-selector";
 import { MobileNavigation } from "@/components/mobile-navigation";
 import { createInvitation, createSettlement, createSharedExpense, deleteGroup, deleteSettlement, deleteSharedExpense, updateGroup, updateSettlement, updateSharedExpense } from "@/app/groups/actions";
 import { getAppUrl } from "@/lib/app-url";
@@ -39,6 +40,22 @@ export default async function GroupDetailPage({
     ? await supabase.from("profiles").select("id,display_name").in("id", memberIds)
     : { data: [] };
   const names = new Map((profilesResult.data ?? []).map((profile) => [profile.id, profile.display_name]));
+  const transactions = transactionsResult.data ?? [];
+  const transactionIds = transactions.map((transaction) => transaction.id);
+  const splitsResult = transactionIds.length
+    ? await supabase.from("expense_splits").select("transaction_id,user_id").in("transaction_id", transactionIds)
+    : { data: [] };
+  const participantIdsByTransaction = new Map<string, string[]>();
+  for (const split of splitsResult.data ?? []) {
+    participantIdsByTransaction.set(split.transaction_id, [
+      ...(participantIdsByTransaction.get(split.transaction_id) ?? []),
+      split.user_id,
+    ]);
+  }
+  const participantOptions = members.map((member) => ({
+    id: member.user_id,
+    name: names.get(member.user_id) ?? "Integrante",
+  }));
   const currentRole = members.find((member) => member.user_id === user.id)?.role;
   const canInvite = currentRole === "owner" || currentRole === "admin";
   const canEditGroup = billingAccess.hasPlus && canInvite;
@@ -83,13 +100,14 @@ export default async function GroupDetailPage({
         </section>
 
         <section className="mt-6 grid gap-6 lg:grid-cols-2">
-          <ActionCard icon={<ReceiptText className="size-5" />} title="Nuevo gasto compartido" subtitle="Se dividirá por igual entre todos.">
+          <ActionCard icon={<ReceiptText className="size-5" />} title="Nuevo gasto compartido" subtitle="Elige quiénes participan en este gasto.">
             <form action={createSharedExpense} className="mt-5 grid gap-4 sm:grid-cols-2">
-              <input type="hidden" name="groupId" value={id} /><input type="hidden" name="memberIds" value={JSON.stringify(memberIds)} />
+              <input type="hidden" name="groupId" value={id} />
               <Field label="Concepto" name="title" placeholder="Supermercado" />
               <Field label="Cantidad" name="amount" type="number" placeholder="0.00" />
               <label className="block"><span className="text-sm font-bold">Categoría</span><select name="category" className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4"><option value="food">Alimentos</option><option value="home">Hogar</option><option value="transport">Transporte</option><option value="entertainment">Ocio</option><option value="other">Otros</option></select></label>
               <label className="block"><span className="text-sm font-bold">Pagó</span><select name="paidBy" defaultValue={user.id} className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4">{members.map((member) => <option key={member.user_id} value={member.user_id}>{names.get(member.user_id)}</option>)}</select></label>
+              <ExpenseParticipantSelector participants={participantOptions} className="sm:col-span-2" />
               <button className="min-h-12 rounded-2xl bg-accent px-5 font-extrabold text-ink sm:col-span-2">Guardar gasto</button>
             </form>
           </ActionCard>
@@ -117,23 +135,24 @@ export default async function GroupDetailPage({
         <section className="mt-6 rounded-[2rem] bg-white p-6 shadow-sm">
           <h2 className="text-lg font-extrabold">Actividad reciente</h2>
           <div className="mt-4 divide-y divide-slate-100">
-            {(transactionsResult.data ?? []).map((transaction) => {
+            {transactions.map((transaction) => {
               const canManage = billingAccess.hasPlus && (transaction.created_by === user.id || currentRole === "owner" || currentRole === "admin");
+              const transactionParticipantIds = participantIdsByTransaction.get(transaction.id) ?? [];
               return (
                 <div key={transaction.id} className="py-4">
-                  <div className="flex items-center gap-4"><span className="grid size-10 place-items-center rounded-2xl bg-aqua/20 text-brand"><ReceiptText className="size-5" /></span><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{transaction.title}</p><p className="text-xs text-slate-500">Pagó {names.get(transaction.paid_by ?? "") ?? "Integrante"}</p></div><p className="font-extrabold">{formatMoney(transaction.amount_cents)}</p></div>
+                  <div className="flex items-center gap-4"><span className="grid size-10 place-items-center rounded-2xl bg-aqua/20 text-brand"><ReceiptText className="size-5" /></span><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{transaction.title}</p><p className="text-xs text-slate-500">Pagó {names.get(transaction.paid_by ?? "") ?? "Integrante"} · {transactionParticipantIds.length} {transactionParticipantIds.length === 1 ? "participante" : "participantes"}</p></div><p className="font-extrabold">{formatMoney(transaction.amount_cents)}</p></div>
                   {canManage ? (
                     <div className="mt-3">
-                      <EditModal title="Editar gasto compartido" description="Al cambiar el importe, la división se recalculará por igual entre los integrantes." triggerLabel="Editar gasto" triggerClassName="w-full">
+                      <EditModal title="Editar gasto compartido" description="Actualiza los datos y elige nuevamente quiénes participan." triggerLabel="Editar gasto" triggerClassName="w-full">
                         <form action={updateSharedExpense} className="grid gap-3 sm:grid-cols-2">
                           <input type="hidden" name="groupId" value={id} />
                           <input type="hidden" name="transactionId" value={transaction.id} />
-                          <input type="hidden" name="memberIds" value={JSON.stringify(memberIds)} />
                           <label className="block sm:col-span-2"><span className="text-sm font-bold">Concepto</span><input name="title" defaultValue={transaction.title} required minLength={2} className="mt-2 min-h-12 w-full rounded-xl border border-slate-200 bg-white px-3" /></label>
                           <label className="block"><span className="text-sm font-bold">Importe</span><input name="amount" type="number" inputMode="decimal" min="0.01" step="0.01" defaultValue={(transaction.amount_cents / 100).toFixed(2)} required className="mt-2 min-h-12 w-full rounded-xl border border-slate-200 bg-white px-3" /></label>
                           <label className="block"><span className="text-sm font-bold">Categoría</span><select name="category" defaultValue={transaction.category} className="mt-2 min-h-12 w-full rounded-xl border border-slate-200 bg-white px-3"><option value="food">Alimentos</option><option value="home">Hogar</option><option value="transport">Transporte</option><option value="entertainment">Ocio</option><option value="other">Otros</option></select></label>
                           <MemberSelect label="Pagó" name="paidBy" members={members} names={names} currentUserId={transaction.paid_by ?? undefined} />
                           <label className="block"><span className="text-sm font-bold">Fecha</span><input name="occurredOn" type="date" defaultValue={transaction.occurred_at.slice(0, 10)} required className="mt-2 min-h-12 w-full rounded-xl border border-slate-200 bg-white px-3" /></label>
+                          <ExpenseParticipantSelector participants={participantOptions} defaultSelectedIds={transactionParticipantIds} className="sm:col-span-2" />
                           <button className="min-h-12 rounded-xl bg-gold px-4 font-extrabold text-ink sm:col-span-2">Guardar cambios</button>
                         </form>
                         <form action={deleteSharedExpense} className="mt-4 border-t border-slate-200 pt-4">
@@ -147,7 +166,7 @@ export default async function GroupDetailPage({
                 </div>
               );
             })}
-            {(transactionsResult.data ?? []).length === 0 ? <p className="py-8 text-center text-sm font-semibold text-slate-400">Aún no hay gastos en este grupo.</p> : null}
+            {transactions.length === 0 ? <p className="py-8 text-center text-sm font-semibold text-slate-400">Aún no hay gastos en este grupo.</p> : null}
           </div>
         </section>
 

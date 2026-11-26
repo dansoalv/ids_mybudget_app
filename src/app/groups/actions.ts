@@ -109,24 +109,24 @@ const sharedExpenseSchema = z.object({
   amount: z.coerce.number().positive(),
   category: z.enum(["food", "home", "transport", "entertainment", "other"]),
   paidBy: z.uuid(),
-  memberIds: z.string().transform((value, context) => {
-    try {
-      return z.array(z.uuid()).min(1).parse(JSON.parse(value));
-    } catch {
-      context.addIssue({ code: "custom", message: "Integrantes inválidos" });
-      return z.NEVER;
-    }
-  }),
+  participantIds: z.array(z.uuid()).min(1).transform((ids) => [...new Set(ids)]),
 });
 
+function parseSharedExpense(formData: FormData) {
+  return sharedExpenseSchema.safeParse({
+    ...Object.fromEntries(formData),
+    participantIds: formData.getAll("participantIds"),
+  });
+}
+
 export async function createSharedExpense(formData: FormData) {
-  const parsed = sharedExpenseSchema.safeParse(Object.fromEntries(formData));
+  const parsed = parseSharedExpense(formData);
   const groupId = String(formData.get("groupId") ?? "");
-  if (!parsed.success) fail(`/groups/${groupId}`, "Revisa los datos del gasto");
+  if (!parsed.success) fail(`/groups/${groupId}`, "Selecciona quiénes participan y revisa los datos del gasto");
 
   const amountCents = Math.round(parsed.data.amount * 100);
-  if (amountCents < parsed.data.memberIds.length) fail(`/groups/${groupId}`, "El importe es demasiado pequeño para dividirlo entre todos");
-  const splits = equalSplits(amountCents, parsed.data.memberIds);
+  if (amountCents < parsed.data.participantIds.length) fail(`/groups/${groupId}`, "El importe es demasiado pequeño para dividirlo entre las personas seleccionadas");
+  const splits = equalSplits(amountCents, parsed.data.participantIds);
 
   const { supabase } = await requireUser();
   const { error } = await supabase.rpc("create_shared_expense", {
@@ -149,12 +149,15 @@ const sharedExpenseUpdateSchema = sharedExpenseSchema.extend({
 });
 
 export async function updateSharedExpense(formData: FormData) {
-  const parsed = sharedExpenseUpdateSchema.safeParse(Object.fromEntries(formData));
+  const parsed = sharedExpenseUpdateSchema.safeParse({
+    ...Object.fromEntries(formData),
+    participantIds: formData.getAll("participantIds"),
+  });
   const groupId = String(formData.get("groupId") ?? "");
-  if (!parsed.success) fail(`/groups/${groupId}`, "Revisa los datos del gasto");
+  if (!parsed.success) fail(`/groups/${groupId}`, "Selecciona quiénes participan y revisa los datos del gasto");
 
   const amountCents = Math.round(parsed.data.amount * 100);
-  if (amountCents < parsed.data.memberIds.length) fail(`/groups/${groupId}`, "El importe es demasiado pequeño para dividirlo entre todos");
+  if (amountCents < parsed.data.participantIds.length) fail(`/groups/${groupId}`, "El importe es demasiado pequeño para dividirlo entre las personas seleccionadas");
   const { supabase } = await requirePaidAccess(`/groups/${parsed.data.groupId}`);
   const { data, error } = await supabase.rpc("update_shared_expense", {
     p_transaction_id: parsed.data.transactionId,
@@ -163,7 +166,7 @@ export async function updateSharedExpense(formData: FormData) {
     p_category: parsed.data.category,
     p_amount_cents: amountCents,
     p_paid_by: parsed.data.paidBy,
-    p_splits: equalSplits(amountCents, parsed.data.memberIds),
+    p_splits: equalSplits(amountCents, parsed.data.participantIds),
     p_occurred_at: `${parsed.data.occurredOn}T12:00:00.000Z`,
   });
 

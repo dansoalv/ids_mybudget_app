@@ -28,7 +28,16 @@ export function PwaProvider() {
     window.visualViewport?.addEventListener("scroll", updateVisualViewport);
 
     if ("serviceWorker" in navigator) {
-      void navigator.serviceWorker.register("/sw.js");
+      if (process.env.NODE_ENV === "production") {
+        void navigator.serviceWorker.register("/sw.js");
+      } else {
+        void navigator.serviceWorker.getRegistration("/").then((registration) => registration?.unregister());
+        if ("caches" in window) {
+          void caches.keys().then((keys) => Promise.all(
+            keys.filter((key) => key.startsWith("mybudget-")).map((key) => caches.delete(key)),
+          ));
+        }
+      }
     }
 
     const synchronize = () => void flushTransactionQueue();
