@@ -1,6 +1,6 @@
 import type { SharedBalance, Transaction } from "@/types/finance";
 
-export const initialTransactions: Transaction[] = [
+export const personalTransactions: Transaction[] = [
   {
     id: "trx-salary",
     title: "Nómina",
@@ -10,28 +10,6 @@ export const initialTransactions: Transaction[] = [
     scope: "personal",
     category: "salary",
     occurredAt: "2026-11-15T09:00:00.000Z",
-  },
-  {
-    id: "trx-market",
-    title: "Supermercado",
-    amountCents: 184590,
-    currency: "MXN",
-    type: "expense",
-    scope: "shared",
-    category: "food",
-    occurredAt: "2026-11-22T18:30:00.000Z",
-    groupName: "Casa",
-  },
-  {
-    id: "trx-rent",
-    title: "Renta noviembre",
-    amountCents: 960000,
-    currency: "MXN",
-    type: "expense",
-    scope: "shared",
-    category: "home",
-    occurredAt: "2026-11-20T12:00:00.000Z",
-    groupName: "Casa",
   },
   {
     id: "trx-coffee",

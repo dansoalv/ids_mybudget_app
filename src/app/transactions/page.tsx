@@ -19,7 +19,7 @@ import { MobileNavigation } from "@/components/mobile-navigation";
 import { requireUser } from "@/lib/auth";
 import { readBillingAccess } from "@/lib/billing/entitlements";
 import { formatMoney, summarizeTransactions } from "@/lib/money";
-import { readTransactions } from "@/lib/read-transactions";
+import { readPersonalTransactions } from "@/lib/read-transactions";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { cn } from "@/lib/utils";
 import type { Transaction, TransactionCategory } from "@/types/finance";
@@ -47,7 +47,7 @@ export default async function TransactionsPage({
   searchParams: Promise<{ success?: string; error?: string }>;
 }) {
   const messages = await searchParams;
-  const { transactions, mode } = await readTransactions();
+  const { transactions, mode } = await readPersonalTransactions();
   const hasPlus = await readHasPlusAccess();
   const summary = summarizeTransactions(transactions);
   const grouped = groupTransactionsByMonth(transactions);
@@ -75,7 +75,7 @@ export default async function TransactionsPage({
           <div>
             <p className="text-sm font-extrabold uppercase tracking-[0.14em] text-ink/65">Historial financiero</p>
             <h2 className="mt-2 text-3xl font-extrabold tracking-[-0.04em]">Todo tu mes, en orden</h2>
-            <p className="mt-2 max-w-2xl text-base leading-7 text-slate-500">Consulta ingresos y gastos. Puedes corregir o eliminar tus movimientos personales cuando lo necesites.</p>
+            <p className="mt-2 max-w-2xl text-base leading-7 text-slate-500">Consulta, corrige o elimina los movimientos de tu cuenta personal. Los gastos compartidos se administran por separado dentro de cada grupo.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-cream px-4 py-2 text-sm font-extrabold text-ink">{mode === "live" ? "Edición habilitada" : "Demostración"}</span>
@@ -100,7 +100,7 @@ export default async function TransactionsPage({
               <div key={group.label} className="mt-7 first:mt-6">
                 <h3 className="text-sm font-extrabold capitalize text-slate-400">{group.label}</h3>
                 <div className="mt-2 divide-y divide-slate-100">
-                  {group.transactions.map((transaction) => <TransactionItem key={transaction.id} transaction={transaction} editable={mode === "live" && transaction.scope === "personal"} />)}
+                  {group.transactions.map((transaction) => <TransactionItem key={transaction.id} transaction={transaction} editable={mode === "live"} />)}
                 </div>
               </div>
             ))}
@@ -148,7 +148,7 @@ function TransactionItem({ transaction, editable }: { transaction: Transaction; 
   const date = new Intl.DateTimeFormat("es-MX", { day: "numeric", month: "short" }).format(new Date(transaction.occurredAt));
   return (
     <div className="py-4">
-      <div className="flex items-center gap-3 sm:gap-4"><span className={cn("grid size-11 shrink-0 place-items-center rounded-2xl", meta.tone)}><Icon className="size-5" /></span><div className="min-w-0 flex-1"><div className="flex items-center gap-2"><p className="truncate font-bold">{transaction.title}</p>{transaction.scope === "shared" ? <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-extrabold text-slate-500">Compartido</span> : null}</div><p className="mt-0.5 truncate text-sm text-slate-500">{meta.label} · {transaction.groupName ?? date}</p></div><p className="whitespace-nowrap font-extrabold text-ink">{transaction.type === "income" ? "+" : "−"}{formatMoney(transaction.amountCents)}</p></div>
+      <div className="flex items-center gap-3 sm:gap-4"><span className={cn("grid size-11 shrink-0 place-items-center rounded-2xl", meta.tone)}><Icon className="size-5" /></span><div className="min-w-0 flex-1"><p className="truncate font-bold">{transaction.title}</p><p className="mt-0.5 truncate text-sm text-slate-500">{meta.label} · {date}</p></div><p className="whitespace-nowrap font-extrabold text-ink">{transaction.type === "income" ? "+" : "−"}{formatMoney(transaction.amountCents)}</p></div>
       {editable ? (
         <div className="mt-3">
           <EditModal title="Editar movimiento" description="Actualiza los datos o elimina este movimiento personal." triggerLabel="Editar movimiento" triggerClassName="w-full">

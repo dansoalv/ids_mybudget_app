@@ -16,7 +16,7 @@ import { requireUser } from "@/lib/auth";
 import { readBillingAccess } from "@/lib/billing/entitlements";
 import { createInformativePlan, type PlanBucket } from "@/lib/budget";
 import { formatMoney, summarizeTransactions } from "@/lib/money";
-import { readTransactions } from "@/lib/read-transactions";
+import { readPersonalTransactions } from "@/lib/read-transactions";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
@@ -39,7 +39,7 @@ type PlanPageProps = {
 export default async function PlanPage({ searchParams }: PlanPageProps) {
   const messages = await searchParams;
   const plusData = await readPlusData();
-  const { transactions, mode } = await readTransactions();
+  const { transactions, mode } = await readPersonalTransactions();
   const summary = summarizeTransactions(transactions);
   const plan = createInformativePlan(transactions);
 
@@ -53,12 +53,12 @@ export default async function PlanPage({ searchParams }: PlanPageProps) {
             <div>
               <span className="inline-flex rounded-full bg-white/50 px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.14em] text-ink">Vista informativa · {mode === "live" ? "Datos sincronizados" : "Demostración"}</span>
               <h2 className="mt-5 max-w-2xl text-3xl font-extrabold leading-tight tracking-[-0.04em] sm:text-4xl">Una referencia sencilla para darle intención a tu dinero.</h2>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-ink/65">Distribuimos tus ingresos con la guía 50/30/20. Usa la referencia y define límites propios sin modificar tus movimientos.</p>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-ink/65">Distribuimos tus ingresos personales con la guía 50/30/20. Los gastos de grupos mantienen sus propias cuentas y no afectan este plan.</p>
             </div>
             <div className="min-w-60 rounded-3xl bg-white/50 p-5">
               <p className="text-sm font-bold text-ink/55">Disponible del periodo</p>
               <p className="mt-2 text-3xl font-extrabold text-ink">{formatMoney(summary.balanceCents)}</p>
-              <p className="mt-2 text-sm text-ink/55">Ingresos menos gastos registrados</p>
+              <p className="mt-2 text-sm text-ink/55">Ingresos menos gastos personales</p>
             </div>
           </div>
         </section>
@@ -66,7 +66,7 @@ export default async function PlanPage({ searchParams }: PlanPageProps) {
         <section className="mt-7">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div><p className="text-sm font-extrabold uppercase tracking-[0.14em] text-ink/65">Referencia mensual</p><h2 className="mt-2 text-2xl font-extrabold">Distribución 50/30/20</h2></div>
-            <p className="max-w-md text-sm leading-6 text-slate-500">Los importes se calculan sobre {formatMoney(summary.incomeCents)} de ingresos registrados.</p>
+            <p className="max-w-md text-sm leading-6 text-slate-500">Los importes se calculan sobre {formatMoney(summary.incomeCents)} de ingresos personales registrados.</p>
           </div>
 
           <div className="mt-5 grid gap-5 lg:grid-cols-3">

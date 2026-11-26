@@ -1,44 +1,37 @@
 import "server-only";
 
-import { initialTransactions } from "@/features/dashboard/demo-data";
+import { personalTransactions } from "@/features/dashboard/demo-data";
 import { requireUser } from "@/lib/auth";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { toTransaction } from "@/lib/transactions";
 import type { Transaction } from "@/types/finance";
 
-export type TransactionData = {
+export type PersonalTransactionData = {
   transactions: Transaction[];
   mode: "demo" | "live";
 };
 
-export async function readTransactions(): Promise<TransactionData> {
+export async function readPersonalTransactions(): Promise<PersonalTransactionData> {
   if (!isSupabaseConfigured()) {
-    return { transactions: initialTransactions, mode: "demo" };
+    return { transactions: personalTransactions, mode: "demo" };
   }
 
-  const { supabase } = await requireUser();
+  const { supabase, user } = await requireUser();
   await supabase.rpc("materialize_due_recurring_transactions");
-  const [transactionResult, groupResult] = await Promise.all([
-    supabase
-      .from("transactions")
-      .select("*")
-      .order("occurred_at", { ascending: false })
-      .limit(200),
-    supabase.from("groups").select("id,name"),
-  ]);
+  const transactionResult = await supabase
+    .from("transactions")
+    .select("*")
+    .eq("owner_id", user.id)
+    .is("group_id", null)
+    .order("occurred_at", { ascending: false })
+    .limit(200);
 
   if (transactionResult.error) {
     throw new Error("No se pudieron consultar los movimientos");
   }
 
-  const groupNames = new Map(
-    (groupResult.data ?? []).map((group) => [group.id, group.name]),
-  );
   const transactions = (transactionResult.data ?? []).map((row) =>
-    toTransaction(
-      row,
-      row.group_id ? groupNames.get(row.group_id) : undefined,
-    ),
+    toTransaction(row),
   );
 
   return { transactions, mode: "live" };

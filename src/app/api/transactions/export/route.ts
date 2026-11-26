@@ -26,18 +26,20 @@ export async function GET() {
     return NextResponse.json({ error: "La exportación necesita el plan Plus" }, { status: 403 });
   }
 
-  const [transactionResult, groupResult] = await Promise.all([
-    supabase.from("transactions").select("*").order("occurred_at", { ascending: false }).limit(5_000),
-    supabase.from("groups").select("id,name"),
-  ]);
+  const transactionResult = await supabase
+    .from("transactions")
+    .select("*")
+    .eq("owner_id", userId)
+    .is("group_id", null)
+    .order("occurred_at", { ascending: false })
+    .limit(5_000);
 
   if (transactionResult.error) {
     return NextResponse.json({ error: "No se pudieron exportar los movimientos" }, { status: 500 });
   }
 
-  const groups = new Map((groupResult.data ?? []).map((group) => [group.id, group.name]));
   const rows = [
-    ["Fecha", "Tipo", "Concepto", "Categoría", "Importe", "Moneda", "Alcance"],
+    ["Fecha", "Tipo", "Concepto", "Categoría", "Importe", "Moneda"],
     ...(transactionResult.data ?? []).map((transaction) => [
       transaction.occurred_at.slice(0, 10),
       transaction.kind === "income" ? "Ingreso" : "Gasto",
@@ -45,7 +47,6 @@ export async function GET() {
       categoryLabels[transaction.category] ?? transaction.category,
       (transaction.amount_cents / 100).toFixed(2),
       transaction.currency,
-      transaction.group_id ? groups.get(transaction.group_id) ?? "Compartido" : "Personal",
     ]),
   ];
   const csv = `\uFEFF${rows.map((row) => row.map(csvCell).join(",")).join("\r\n")}`;

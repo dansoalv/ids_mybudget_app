@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "MyBudget · Dinero en equipo",
     short_name: "MyBudget",
-    description: "Tus gastos personales y compartidos, claros en un solo lugar.",
+    description: "Tus finanzas personales y gastos de grupo, organizados por separado.",
     start_url: "/",
     display: "standalone",
     background_color: "#fffdf6",

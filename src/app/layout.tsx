@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     default: "MyBudget",
     template: "%s · MyBudget",
   },
-  description: "Tus gastos personales y compartidos, claros en un solo lugar.",
+  description: "Tus finanzas personales y gastos de grupo, organizados por separado.",
   applicationName: "MyBudget",
   appleWebApp: {
     capable: true,

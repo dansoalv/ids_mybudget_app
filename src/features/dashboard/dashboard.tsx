@@ -30,7 +30,6 @@ import { LinkPendingIndicator } from "@/components/link-pending-indicator";
 import type {
   Transaction,
   TransactionCategory,
-  TransactionScope,
   TransactionType,
 } from "@/types/finance";
 
@@ -197,7 +196,7 @@ export function Dashboard({ initialTransactions, initialSharedBalances, user, da
               <div className="absolute -right-10 -top-16 size-44 rounded-full border-[34px] border-orange/30" aria-hidden="true" />
               <div className="relative">
                 <div className="flex items-center justify-between gap-4">
-                  <p className="text-sm font-semibold text-ink/65">Balance disponible</p>
+                  <p className="text-sm font-semibold text-ink/65">Balance personal disponible</p>
                   <span className="rounded-full bg-white/50 px-3 py-1 text-xs font-bold text-ink/75">Noviembre</span>
                 </div>
                 <p className="mt-4 text-4xl font-extrabold tracking-[-0.045em] sm:text-[2.75rem]">
@@ -237,7 +236,7 @@ export function Dashboard({ initialTransactions, initialSharedBalances, user, da
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h2 className="text-lg font-extrabold tracking-tight">Movimientos recientes</h2>
-                  <p className="mt-1 text-sm text-slate-500">Tu actividad personal y compartida</p>
+                  <p className="mt-1 text-sm text-slate-500">Sólo tu actividad personal</p>
                 </div>
                 <button type="button" className="flex min-h-11 items-center gap-1 rounded-xl px-3 text-sm font-bold text-ink hover:bg-aqua/35">
                   Ver todos
@@ -285,7 +284,7 @@ export function Dashboard({ initialTransactions, initialSharedBalances, user, da
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-lg font-extrabold tracking-tight">Cuentas compartidas</h2>
-                    <p className="mt-1 text-sm text-slate-500">Tus saldos pendientes</p>
+                    <p className="mt-1 text-sm text-slate-500">Resumen separado de tus grupos</p>
                   </div>
                   <span className="grid size-10 place-items-center rounded-2xl bg-white/70 text-accent">
                     <Users className="size-5" aria-hidden="true" />
@@ -341,7 +340,7 @@ export function Dashboard({ initialTransactions, initialSharedBalances, user, da
       </nav>
 
       {isFormOpen ? (
-        <QuickTransactionForm onClose={() => setIsFormOpen(false)} onCreate={addTransaction} allowShared={dataMode === "demo"} />
+        <QuickTransactionForm onClose={() => setIsFormOpen(false)} onCreate={addTransaction} />
       ) : null}
 
       <div className="safe-notice pointer-events-none fixed inset-x-4 z-50 flex justify-center" aria-live="polite">
@@ -392,14 +391,9 @@ function TransactionRow({ transaction }: { transaction: Transaction }) {
         <Icon className="size-5" aria-hidden="true" />
       </span>
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <p className="truncate text-sm font-bold sm:text-[15px]">{transaction.title}</p>
-          {transaction.scope === "shared" ? (
-            <span className="hidden rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500 sm:inline">Compartido</span>
-          ) : null}
-        </div>
+        <p className="truncate text-sm font-bold sm:text-[15px]">{transaction.title}</p>
         <p className="mt-0.5 truncate text-xs text-slate-500">
-          {meta.label} · {transaction.groupName ?? date}
+          {meta.label} · {date}
         </p>
       </div>
       <p className="whitespace-nowrap text-sm font-extrabold text-ink sm:text-[15px]">
@@ -422,14 +416,11 @@ function Legend({ color, label, value }: { color: string; label: string; value: 
 function QuickTransactionForm({
   onClose,
   onCreate,
-  allowShared,
 }: {
   onClose: () => void;
   onCreate: (transaction: Transaction) => void | Promise<void>;
-  allowShared: boolean;
 }) {
   const [type, setType] = useState<TransactionType>("expense");
-  const [scope, setScope] = useState<TransactionScope>("personal");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -455,7 +446,7 @@ function QuickTransactionForm({
       amount: formData.get("amount"),
       category: formData.get("category"),
       type,
-      scope,
+      scope: "personal",
     });
 
     if (!result.success) {
@@ -472,7 +463,6 @@ function QuickTransactionForm({
       scope: result.data.scope,
       category: result.data.category,
       occurredAt: new Date().toISOString(),
-      groupName: result.data.scope === "shared" ? "Casa" : undefined,
     });
   }
 
@@ -520,15 +510,9 @@ function QuickTransactionForm({
               </select>
             </label>
             <div>
-              <span className="text-sm font-bold text-slate-700">¿Para quién?</span>
-              <div className="mt-2 grid grid-cols-2 gap-2">
-                {(["personal", ...(allowShared ? ["shared" as const] : [])] as const).map((option) => (
-                  <button key={option} type="button" onClick={() => setScope(option)} className={cn("min-h-13 rounded-2xl border text-sm font-bold", scope === option ? "border-gold bg-gold text-ink" : "border-slate-200 bg-white text-slate-600")}>
-                    {option === "personal" ? "Personal" : "Casa"}
-                  </button>
-                ))}
-              </div>
-              {!allowShared ? <Link href="/groups" className="mt-2 block text-xs font-bold text-ink underline underline-offset-4">Registra gastos compartidos desde Grupos →</Link> : null}
+              <span className="text-sm font-bold text-slate-700">Cuenta</span>
+              <div className="mt-2 rounded-2xl border border-gold bg-gold/55 px-4 py-3 text-sm font-bold text-ink">Personal</div>
+              <Link href="/groups" className="mt-2 block text-xs font-bold text-ink underline underline-offset-4">Registra gastos compartidos desde Grupos →</Link>
             </div>
           </div>
 
