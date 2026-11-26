@@ -136,12 +136,15 @@ export default async function GroupDetailPage({
           <h2 className="text-lg font-extrabold">Actividad reciente</h2>
           <div className="mt-4 divide-y divide-slate-100">
             {transactions.map((transaction) => {
-              const canManage = billingAccess.hasPlus && (transaction.created_by === user.id || currentRole === "owner" || currentRole === "admin");
+              const isCreator = transaction.created_by === user.id;
+              const isGroupAdmin = currentRole === "owner" || currentRole === "admin";
+              const canEdit = billingAccess.hasPlus && (isCreator || isGroupAdmin);
+              const canDelete = isCreator || (billingAccess.hasPlus && isGroupAdmin);
               const transactionParticipantIds = participantIdsByTransaction.get(transaction.id) ?? [];
               return (
                 <div key={transaction.id} className="py-4">
                   <div className="flex items-center gap-4"><span className="grid size-10 place-items-center rounded-2xl bg-aqua/20 text-brand"><ReceiptText className="size-5" /></span><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{transaction.title}</p><p className="text-xs text-slate-500">Pagó {names.get(transaction.paid_by ?? "") ?? "Integrante"} · {transactionParticipantIds.length} {transactionParticipantIds.length === 1 ? "participante" : "participantes"}</p></div><p className="font-extrabold">{formatMoney(transaction.amount_cents)}</p></div>
-                  {canManage ? (
+                  {canEdit ? (
                     <div className="mt-3">
                       <EditModal title="Editar gasto compartido" description="Actualiza los datos y elige nuevamente quiénes participan." triggerLabel="Editar gasto" triggerClassName="w-full">
                         <form action={updateSharedExpense} className="grid gap-3 sm:grid-cols-2">
@@ -155,14 +158,10 @@ export default async function GroupDetailPage({
                           <ExpenseParticipantSelector participants={participantOptions} defaultSelectedIds={transactionParticipantIds} className="sm:col-span-2" />
                           <button className="min-h-12 rounded-xl bg-gold px-4 font-extrabold text-ink sm:col-span-2">Guardar cambios</button>
                         </form>
-                        <form action={deleteSharedExpense} className="mt-4 border-t border-slate-200 pt-4">
-                          <input type="hidden" name="groupId" value={id} />
-                          <input type="hidden" name="transactionId" value={transaction.id} />
-                          <ConfirmDeleteButton message={`¿Eliminar “${transaction.title}” del grupo? También se recalcularán los saldos.`} label="Eliminar gasto" className="w-full" />
-                        </form>
+                        {canDelete ? <DeleteSharedExpenseForm groupId={id} transactionId={transaction.id} title={transaction.title} className="mt-4 border-t border-slate-200 pt-4" /> : null}
                       </EditModal>
                     </div>
-                  ) : null}
+                  ) : canDelete ? <DeleteSharedExpenseForm groupId={id} transactionId={transaction.id} title={transaction.title} className="mt-3" /> : null}
                 </div>
               );
             })}
@@ -216,4 +215,8 @@ function Field({ label, name, type = "text", placeholder, required = true }: { l
 
 function MemberSelect({ label, name, members, names, currentUserId }: { label: string; name: string; members: { user_id: string }[]; names: Map<string, string>; currentUserId?: string }) {
   return <label className="block"><span className="text-sm font-bold">{label}</span><select name={name} defaultValue={currentUserId} className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4">{members.map((member) => <option key={member.user_id} value={member.user_id}>{names.get(member.user_id)}</option>)}</select></label>;
+}
+
+function DeleteSharedExpenseForm({ groupId, transactionId, title, className }: { groupId: string; transactionId: string; title: string; className?: string }) {
+  return <form action={deleteSharedExpense} className={className}><input type="hidden" name="groupId" value={groupId} /><input type="hidden" name="transactionId" value={transactionId} /><ConfirmDeleteButton message={`¿Eliminar “${title}” del grupo? También se recalcularán los saldos.`} label="Eliminar gasto" className="w-full" /></form>;
 }

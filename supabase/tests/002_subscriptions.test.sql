@@ -1,6 +1,6 @@
 begin;
 
-select plan(23);
+select plan(24);
 
 select has_type('public', 'subscription_plan', 'subscription_plan enum exists');
 select has_table('public', 'subscriptions', 'subscriptions exists');
@@ -25,6 +25,11 @@ select has_column('public', 'recurring_transactions', 'day_of_month', 'monthly r
 select has_function('public', 'update_shared_expense', array['uuid', 'uuid', 'text', 'text', 'bigint', 'uuid', 'jsonb', 'timestamp with time zone'], 'shared expenses can be updated atomically');
 select ok(pg_get_functiondef('private.enforce_group_update_permissions()'::regprocedure) like '%not private.has_paid_access%', 'group editing requires a paid plan');
 select ok(pg_get_functiondef('public.update_shared_expense(uuid,uuid,text,text,bigint,uuid,jsonb,timestamp with time zone)'::regprocedure) like '%not private.has_paid_access%', 'shared expense editing requires a paid plan');
+select ok(
+  (select qual from pg_policies where schemaname = 'public' and tablename = 'transactions' and policyname = 'Users delete permitted transactions') like '%created_by%'
+  and (select qual from pg_policies where schemaname = 'public' and tablename = 'transactions' and policyname = 'Users delete permitted transactions') like '%has_paid_access%',
+  'creators delete shared expenses on every plan while paid admins retain access'
+);
 
 select * from finish();
 rollback;

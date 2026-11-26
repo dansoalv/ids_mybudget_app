@@ -1,20 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { insert, from, redirect, requireUser, rpc } = vi.hoisted(() => ({
+const { insert, from, redirect, requireUser, readBillingAccess, rpc } = vi.hoisted(() => ({
   insert: vi.fn(),
   from: vi.fn(),
   redirect: vi.fn(),
   requireUser: vi.fn(),
+  readBillingAccess: vi.fn(),
   rpc: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({ redirect }));
 vi.mock("@/lib/auth", () => ({ requireUser }));
 vi.mock("@/lib/billing/entitlements", () => ({
-  readBillingAccess: vi.fn(),
+  readBillingAccess,
 }));
 
-import { createGroup, createSharedExpense } from "./actions";
+import { createGroup, createSharedExpense, deleteSharedExpense } from "./actions";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -102,5 +103,25 @@ describe("createSharedExpense", () => {
       "REDIRECT:/groups/91cdd96f-4f49-40ad-9aac-ff1ac2d1a4e3?error=",
     );
     expect(rpc).not.toHaveBeenCalled();
+  });
+});
+
+describe("deleteSharedExpense", () => {
+  it("permite que el creador intente eliminar sin exigir un plan pagado", async () => {
+    const maybeSingle = vi.fn().mockResolvedValue({ data: { id: "c866f7ee-11de-4ee2-a291-30fb68417d51" }, error: null });
+    const select = vi.fn().mockReturnValue({ maybeSingle });
+    const secondEq = vi.fn().mockReturnValue({ select });
+    const firstEq = vi.fn().mockReturnValue({ eq: secondEq });
+    const remove = vi.fn().mockReturnValue({ eq: firstEq });
+    from.mockReturnValueOnce({ delete: remove });
+
+    const formData = new FormData();
+    formData.set("groupId", "91cdd96f-4f49-40ad-9aac-ff1ac2d1a4e3");
+    formData.set("transactionId", "c866f7ee-11de-4ee2-a291-30fb68417d51");
+
+    await expect(deleteSharedExpense(formData)).rejects.toThrow(
+      "REDIRECT:/groups/91cdd96f-4f49-40ad-9aac-ff1ac2d1a4e3?success=expense-deleted",
+    );
+    expect(readBillingAccess).not.toHaveBeenCalled();
   });
 });

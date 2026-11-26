@@ -179,7 +179,7 @@ export async function deleteSharedExpense(formData: FormData) {
   const groupId = String(formData.get("groupId") ?? "");
   if (!parsed.success) fail(`/groups/${groupId}`, "Gasto inválido");
 
-  const { supabase } = await requirePaidAccess(`/groups/${parsed.data.groupId}`);
+  const { supabase } = await requireUser();
   const { data, error } = await supabase
     .from("transactions")
     .delete()

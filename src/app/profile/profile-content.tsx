@@ -73,7 +73,7 @@ const planDetails: Array<{
     description: "Lo esencial para ordenar tus finanzas y compartir un espacio.",
     icon: BadgeCheck,
     tone: "bg-aqua/25 text-brand",
-    features: ["Movimientos personales editables", "Presupuestos por categoría", "1 grupo compartido", "Registro de gastos y liquidaciones"],
+    features: ["Movimientos personales editables", "Presupuestos por categoría", "1 grupo compartido", "Registro de gastos y liquidaciones", "Elimina los gastos compartidos que creaste"],
   },
   {
     id: "plus",
