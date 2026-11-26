@@ -1,6 +1,6 @@
 begin;
 
-select plan(24);
+select plan(26);
 
 select has_type('public', 'subscription_plan', 'subscription_plan enum exists');
 select has_table('public', 'subscriptions', 'subscriptions exists');
@@ -29,6 +29,15 @@ select ok(
   (select qual from pg_policies where schemaname = 'public' and tablename = 'transactions' and policyname = 'Users delete permitted transactions') like '%created_by%'
   and (select qual from pg_policies where schemaname = 'public' and tablename = 'transactions' and policyname = 'Users delete permitted transactions') like '%has_paid_access%',
   'creators delete shared expenses on every plan while paid admins retain access'
+);
+select ok(
+  lower(pg_get_functiondef('private.validate_expense_splits()'::regprocedure)) like '%if not found then%',
+  'split validation permits cascade deletion after the parent transaction is gone'
+);
+select ok(
+  lower(pg_get_functiondef('private.validate_expense_splits()'::regprocedure)) like '%transaction_kind%'
+  and lower(pg_get_functiondef('private.validate_expense_splits()'::regprocedure)) like '%only shared expenses can have splits%',
+  'split validation still rejects non-expense transactions'
 );
 
 select * from finish();
